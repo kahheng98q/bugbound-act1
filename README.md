@@ -14,10 +14,14 @@ Bug 的 Reward/Risk 直接结算，不会触发其他 Bug，也不会形成 Bug-
 
 当前完整流程：
 
-- 两层分支战斗：Corrupted Folder、Broken Cursor、Trash Beast、Frozen Window。
+- 主菜单可直接 New Run，或输入 Seed 重现指定 Run；Run UI 持续显示 Seed 与 RNG 游标。
+- 10 层 Desktop 分支路线后进入 Antivirus；地图、节点、敌人、异常路线与隐藏节点资格均由 Seed 生成。
+- Corrupted Folder、Broken Cursor、Trash Beast、Frozen Window 与 Memory Hog 的出现、牌堆、行为和奖励全部可复现。
 - OS-style 战斗 Pop-up，两个选项都有清楚的即时收益与代价。
 - System Update 事件或 Memory Hog Elite 二选一。
 - 每场胜利后从三张牌中安装一张，HP 与牌组会保留到 Run 结束。
 - Antivirus Boss：每次主动触发 Bug 都令 Threat +1，扫描伤害随 Threat 增长；没有第二阶段。
+
+确定性原则：所有 gameplay RNG 只使用 Run 内保存的 seeded RNG 状态。`Same Seed + Same Decisions = Same Run`。New Run 按钮只负责生成初始 Seed；Seed 建立后不会再读取系统随机源。
 
 运行：`npm install` 后执行 `npm run dev`。

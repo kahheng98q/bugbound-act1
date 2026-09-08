@@ -189,6 +189,43 @@ main { min-height: 100vh; background-image: linear-gradient(rgba(87,242,135,.025
   .mission-line p { font-size: 10px; }
 }
 
+/* Deterministic run shell */
+.seed-chip { display: grid; grid-template-columns: auto auto; align-items: center; gap: 2px 10px; padding: 7px 11px; border: 1px solid #355247; background: #0b1512; }
+.seed-chip span, .seed-chip small { color: var(--muted); font-size: 7px; letter-spacing: .12em; }
+.seed-chip strong { color: var(--cyan); font-size: 11px; }
+.seed-chip small { grid-column: 2; }
+.menu-screen { background: radial-gradient(circle at 50% 42%, rgba(87,242,135,.1), transparent 34%); }
+.main-menu { width: min(560px, 100%); padding: 42px; border: 1px solid #41685a; background: linear-gradient(145deg, #101d19, #080f0d); box-shadow: 0 35px 120px rgba(0,0,0,.55); text-align: center; }
+.main-menu > span { color: var(--green); font-size: 9px; letter-spacing: .2em; }
+.main-menu h2 { margin: 13px 0 10px; font-size: clamp(27px, 5vw, 43px); }
+.main-menu p { margin: 0 auto 27px; max-width: 430px; color: var(--muted); font-size: 10px; line-height: 1.8; }
+.primary-run { width: 100%; display: grid; gap: 4px; padding: 17px; border: 0; background: var(--green); color: #06100b; cursor: pointer; }
+.primary-run strong { font-size: 14px; letter-spacing: .16em; }
+.primary-run small { font-size: 8px; }
+.seed-entry { margin: 14px 0 20px; padding: 14px; border: 1px solid var(--line); text-align: left; }
+.seed-entry label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 8px; letter-spacing: .14em; }
+.seed-entry > div { display: grid; grid-template-columns: 1fr auto; }
+.seed-entry input { min-width: 0; padding: 12px; border: 1px solid #3b5c50; outline: none; background: #07100d; color: var(--cyan); font: inherit; text-transform: uppercase; }
+.seed-entry input:focus { border-color: var(--cyan); }
+.seed-entry button { padding: 0 20px; border: 0; background: var(--cyan); color: #07100d; font-weight: 800; cursor: pointer; }
+.main-menu > code { color: #60776d; font-size: 8px; letter-spacing: .09em; }
+.path-map.seeded-map { grid-template-columns: repeat(11, minmax(185px, 1fr)); min-width: 2250px; overflow: visible; }
+.map-shell { overflow-x: auto; }
+.map-node.anomaly { border-color: #806833; background: repeating-linear-gradient(135deg, #18170f 0 8px, #12140f 8px 16px); }
+.map-node.anomaly.unlocked { border-color: var(--yellow); box-shadow: 0 0 24px rgba(255,209,102,.11); }
+.map-node.secret { border-color: var(--cyan); }
+.run-footer { position: sticky; left: 0; width: max-content; min-width: 100%; background: #0d1714; }
+.run-footer .warning { color: var(--yellow); }
+.event-anomaly { border-color: var(--yellow); box-shadow: 0 30px 100px rgba(255,209,102,.08); }
+.result-seed { display: grid; gap: 5px; margin: 18px 0; padding: 13px; border: 1px solid var(--line); }
+.result-seed small, .result-seed span { color: var(--muted); font-size: 7px; letter-spacing: .12em; }
+.result-seed strong { color: var(--cyan); font-size: 16px; }
+
+@media (max-width: 760px) {
+  .seed-chip { display: none; }
+  .main-menu { padding: 28px 20px; }
+}
+
 /* Act 1 desktop shell */
 .run-health { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 9px; letter-spacing: .1em; }
 .run-health strong { color: var(--green); font-size: 13px; }
@@ -304,4 +341,40 @@ main { min-height: 100vh; background-image: linear-gradient(rgba(87,242,135,.025
   .threat-meter { grid-template-columns: 1fr auto; }
   .threat-meter > div, .threat-meter small { grid-column: 1 / -1; }
   .dialog-body { grid-template-columns: 1fr; }
+}
+
+/* Full-viewport map and stage-centered navigation. Keep these last so the
+   desktop-shell and responsive defaults above cannot reintroduce margins. */
+.map-shell {
+  width: 100%;
+  height: calc(100dvh - 76px);
+  min-height: 620px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-inline: 0;
+  box-shadow: none;
+}
+
+.path-map.seeded-map {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(11, minmax(185px, 1fr));
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scroll-padding-inline: 38px;
+}
+
+.path-map.seeded-map .map-tier { min-width: 185px; }
+.explorer-bar, .map-intro, .run-footer { flex: 0 0 auto; }
+.run-footer { width: 100%; position: static; }
+
+@media (max-width: 760px) {
+  .map-shell { width: 100%; height: calc(100dvh - 68px); min-height: 560px; margin: 0; }
+  .path-map.seeded-map { grid-template-columns: repeat(11, minmax(185px, 1fr)); padding-inline: 18px; }
 }

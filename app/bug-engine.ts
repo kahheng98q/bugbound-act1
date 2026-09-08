@@ -72,7 +72,7 @@ export const BUGS: Record<BugKey, Bug> = {
   },
 };
 
-export function nextBugKey(current: BugKey, random = Math.random): BugKey {
+export function nextBugKey(current: BugKey, random: () => number): BugKey {
   const candidates = (Object.keys(BUGS) as BugKey[]).filter((key) => key !== current);
   const index = Math.min(candidates.length - 1, Math.floor(random() * candidates.length));
   return candidates[index];
