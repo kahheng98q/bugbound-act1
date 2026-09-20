@@ -1,0 +1,1146 @@
+[
+  [
+    "Game controls",
+    "游戏控制"
+  ],
+  [
+    "Card Library",
+    "卡牌图鉴"
+  ],
+  [
+    "Current deck",
+    "当前牌组"
+  ],
+  [
+    "Deck",
+    "牌组"
+  ],
+  [
+    "Run paused",
+    "冒险已暂停"
+  ],
+  [
+    "Resume run",
+    "继续冒险"
+  ],
+  [
+    "Inspect current deck",
+    "查看当前牌组"
+  ],
+  [
+    "Browse all cards",
+    "浏览所有卡牌"
+  ],
+  [
+    "Return to home…",
+    "返回首页…"
+  ],
+  [
+    "Abandon run and return home",
+    "放弃冒险并返回首页"
+  ],
+  [
+    "Cancel",
+    "取消"
+  ],
+  [
+    "Close",
+    "关闭"
+  ],
+  [
+    "Abandon this run? All progress in this run will be lost.",
+    "确定放弃本次冒险吗？本次冒险的所有进度都会丢失。"
+  ],
+  [
+    "Your run is paused. Resume to continue exactly where you left off.",
+    "冒险已暂停，点击继续即可从原处接着游玩。"
+  ],
+  [
+    "All cards, including starter cards, event cards, and post-battle rewards.",
+    "全部卡牌，包括初始卡牌、事件卡牌和战后奖励。"
+  ],
+  [
+    "Your complete run deck, including cards in hand, draw pile, discard pile, and cards exhausted this battle. Temporary battle upgrades are not shown.",
+    "本次冒险的完整牌组，包括手牌、抽牌堆、弃牌堆及本场已消耗的卡牌。不显示战斗中的临时升级。"
+  ],
+  [
+    "Search cards",
+    "搜索卡牌"
+  ],
+  [
+    "Name or ability",
+    "名称或能力"
+  ],
+  [
+    "Card type",
+    "卡牌类型"
+  ],
+  [
+    "All cards",
+    "全部卡牌"
+  ],
+  [
+    "unique cards shown",
+    "种卡牌显示中"
+  ],
+  [
+    "Battle reward",
+    "战后奖励"
+  ],
+  [
+    "Starter card",
+    "初始卡牌"
+  ],
+  [
+    "Event card",
+    "事件卡牌"
+  ],
+  [
+    "Copies",
+    "数量"
+  ],
+  [
+    "No matching cards.",
+    "没有符合条件的卡牌。"
+  ],
+  [
+    "Exhaust: removed for this battle only. Nectar resets each battle. Sting Commit permanently removes its played copy.",
+    "消耗：仅在本场战斗移除。花蜜每场战斗重置。蜂刺提交会永久移除打出的那张卡。"
+  ],
+  [
+    "Every bug has an address.",
+    "每个漏洞都有自己的地址。"
+  ],
+  [
+    "BOOT SEQUENCE READY",
+    "启动准备就绪"
+  ],
+  [
+    "NEW RUN",
+    "开始新冒险"
+  ],
+  [
+    "RUN MENU",
+    "冒险菜单"
+  ],
+  [
+    "ENTER SEED / SEEDED RUN",
+    "输入种子 / 指定冒险"
+  ],
+  [
+    "BOOT",
+    "启动"
+  ],
+  [
+    "SAME SEED + SAME INPUTS = SAME RUN",
+    "相同种子 + 相同操作 = 相同冒险"
+  ],
+  [
+    "The same seed, route, cards and choices produce exactly the same run.",
+    "同一个 Seed，加上完全相同的路线、出牌和选择，会得到完全相同的 Run。"
+  ],
+  [
+    "Generate a new seed",
+    "生成新的 Seed"
+  ],
+  [
+    "Choose a system path.",
+    "选择系统路线。"
+  ],
+  [
+    "All future nodes are visible. Safe paths conserve resources; risky paths can strengthen your build.",
+    "未来节点全部可见。安全路线保资源，风险路线可能让坏事变成 Build 的一部分。"
+  ],
+  [
+    "Copy to share or debug",
+    "可复制分享与 Debug"
+  ],
+  [
+    "File Explorer",
+    "文件管理器"
+  ],
+  [
+    "ACT 1 / DESKTOP",
+    "第一幕 / 桌面"
+  ],
+  [
+    "RUN SEED",
+    "冒险种子"
+  ],
+  [
+    "RNG CALLS",
+    "随机调用次数"
+  ],
+  [
+    "SYSTEM HEALTH",
+    "系统生命"
+  ],
+  [
+    "Bee Programmer",
+    "蜜蜂程序员"
+  ],
+  [
+    "Bee programmer",
+    "蜜蜂程序员"
+  ],
+  [
+    "PLAYER_PROCESS",
+    "玩家进程"
+  ],
+  [
+    "SECURITY ALERT",
+    "安全警报"
+  ],
+  [
+    "ACTIVE PROCESS",
+    "活动进程"
+  ],
+  [
+    "Details",
+    "详情"
+  ],
+  [
+    "Battle log",
+    "战斗记录"
+  ],
+  [
+    "END TURN",
+    "结束回合"
+  ],
+  [
+    "HAND EMPTY",
+    "手牌已空"
+  ],
+  [
+    "REQUIREMENTS NOT MET",
+    "未满足使用条件"
+  ],
+  [
+    "CLICK TO RUN",
+    "点击使用"
+  ],
+  [
+    "INSTALL",
+    "安装"
+  ],
+  [
+    "PROCESS TERMINATED",
+    "进程已终止"
+  ],
+  [
+    "Install one new command.",
+    "安装一张新指令卡。"
+  ],
+  [
+    "Three choices and their order are determined by this run’s seed.",
+    "三个候选与顺序都由当前 Run Seed 决定。"
+  ],
+  [
+    "Skip installation",
+    "跳过安装"
+  ],
+  [
+    "No playable cards—end your turn to continue.",
+    "没有可出的牌了——结束回合，让系统继续运行。"
+  ],
+  [
+    "First Attack each turn: +1 Nectar · kept this battle",
+    "每回合首次攻击：+1 花蜜 · 本场战斗保留"
+  ],
+  [
+    "Cached Energy:",
+    "已缓存能量："
+  ],
+  [
+    "next turn",
+    "下回合"
+  ],
+  [
+    "collect next effect",
+    "采集下一张牌的效果"
+  ],
+  [
+    "pass to next card",
+    "传递给下一张牌"
+  ],
+  [
+    "Nectar",
+    "花蜜"
+  ],
+  [
+    "Compiler",
+    "编译器"
+  ],
+  [
+    "Pollen",
+    "花粉"
+  ],
+  [
+    "Retaliation",
+    "反击"
+  ],
+  [
+    "Upgrade a card: cost reduced by 1",
+    "选择升级卡牌：能量消耗降低 1"
+  ],
+  [
+    "Arrange remaining cards: next draw first",
+    "排列剩余卡牌：先选的先抽"
+  ],
+  [
+    "Choose a card to draw",
+    "选择一张卡牌抽取"
+  ],
+  [
+    "Choose a card",
+    "选择卡牌"
+  ],
+  [
+    "Nectar Cache",
+    "花蜜缓存"
+  ],
+  [
+    "Pollen Pipeline",
+    "花粉流水线"
+  ],
+  [
+    "Waggle Debugger",
+    "摇摆舞调试器"
+  ],
+  [
+    "Honeycomb Compiler",
+    "蜂巢编译器"
+  ],
+  [
+    "Hive Interrupt",
+    "蜂巢中断"
+  ],
+  [
+    "Sting Commit",
+    "蜂刺提交"
+  ],
+  [
+    "Swarm Loop",
+    "蜂群循环"
+  ],
+  [
+    "Royal Jelly Refactor",
+    "蜂王浆重构"
+  ],
+  [
+    "Bank all remaining Energy. Recover it next turn. Gain 1 Nectar. Exhaust.",
+    "储存剩余全部能量，下回合取回。获得 1 花蜜。消耗。"
+  ],
+  [
+    "Copy half the next card’s damage and Block onto the following card. Carries across turns.",
+    "将下一张牌一半的伤害和格挡传给再下一张牌。跨回合保留。"
+  ],
+  [
+    "Inspect up to 3 cards. Choose one to draw, then arrange the rest on top. Exhaust.",
+    "查看最多 3 张牌。选一张抽取，再排列其余牌置于牌堆顶。消耗。"
+  ],
+  [
+    "This battle: every 6 cards replay the first card’s printed damage, Block, draw and healing. Exhaust.",
+    "本场战斗每打出 6 张牌，重复首张牌的基础伤害、格挡、抽牌与治疗。消耗。"
+  ],
+  [
+    "Gain 5 Block. The next enemy hit that hurts you triggers 8 retaliation damage. Stacks.",
+    "获得 5 格挡。下次敌人使你损失生命时，反击 8 伤害。可叠加。"
+  ],
+  [
+    "Deal 24 damage. Permanently lose this copy from your run deck.",
+    "造成 24 伤害。此卡永久移出本次冒险的牌组。"
+  ],
+  [
+    "Spend all Nectar. Deal 3 damage, then 3 more per Nectar spent. Counts as one Attack.",
+    "消耗全部花蜜。造成 3 伤害，每消耗 1 花蜜追加 3 伤害。算一次攻击。"
+  ],
+  [
+    "Spend 2 Nectar: choose a card in hand costing 1+. Reduce its cost by 1 this battle. Exhaust.",
+    "消耗 2 花蜜：选一张消耗至少 1 的手牌，本场战斗消耗降低 1。消耗。"
+  ],
+  [
+    "Compile Strike",
+    "编译打击"
+  ],
+  [
+    "Hotfix",
+    "热修复"
+  ],
+  [
+    "Rubber Duck",
+    "小黄鸭"
+  ],
+  [
+    "Refactor",
+    "重构"
+  ],
+  [
+    "Cache Shield",
+    "缓存护盾"
+  ],
+  [
+    "Stack Trace",
+    "堆栈追踪"
+  ],
+  [
+    "Rollback",
+    "回滚"
+  ],
+  [
+    "Garbage Collect",
+    "垃圾回收"
+  ],
+  [
+    "Pair Program",
+    "结对编程"
+  ],
+  [
+    "Overclock",
+    "超频"
+  ],
+  [
+    "Unit Test",
+    "单元测试"
+  ],
+  [
+    "Ship It",
+    "立即部署"
+  ],
+  [
+    "Corrupted Folder",
+    "损坏文件夹"
+  ],
+  [
+    "Broken Cursor",
+    "失灵光标"
+  ],
+  [
+    "Trash Beast",
+    "垃圾怪"
+  ],
+  [
+    "Frozen Window",
+    "冻结窗口"
+  ],
+  [
+    "Memory Hog",
+    "内存吞噬猪"
+  ],
+  [
+    "Antivirus",
+    "杀毒卫士"
+  ],
+  [
+    "ANTIVIRUS",
+    "杀毒卫士"
+  ],
+  [
+    "Documents",
+    "文档"
+  ],
+  [
+    "Pointer Cache",
+    "指针缓存"
+  ],
+  [
+    "Recycle Bin",
+    "回收站"
+  ],
+  [
+    "Frozen App",
+    "冻结应用"
+  ],
+  [
+    "System Update",
+    "系统更新"
+  ],
+  [
+    "Security Center",
+    "安全中心"
+  ],
+  [
+    "Offline Printer",
+    "离线打印机"
+  ],
+  [
+    "CORRUPTED ROUTE",
+    "损坏路线"
+  ],
+  [
+    "ROUTE ANOMALY",
+    "路线异常"
+  ],
+  [
+    "BACKGROUND PROCESS PENDING",
+    "后台进程等待中"
+  ],
+  [
+    "Chooses file throwing or self-backup based on the seed.",
+    "根据种子选择文件投掷或自我备份。"
+  ],
+  [
+    "Your first Attack each turn deals 3 less damage.",
+    "每回合第一张 Attack 少造成 3 伤害。"
+  ],
+  [
+    "Attack damage slowly increases each turn.",
+    "攻击力随回合缓慢增长。"
+  ],
+  [
+    "Gains 3 Block whenever you trigger a Bug.",
+    "每次你触发 Bug，它获得 3 Block。"
+  ],
+  [
+    "Permanently gains 2 Strength for every 2 Bugs you trigger.",
+    "你每触发 2 次 Bug，它永久获得 +2 攻击力。"
+  ],
+  [
+    "Bug triggers increase Threat; ordinary attacks and defense do not.",
+    "Bug Trigger 提升 Threat；普通 Attack/Defend 不提升。"
+  ],
+  [
+    "Overflow",
+    "能量溢出"
+  ],
+  [
+    "Memory Leak",
+    "内存泄漏"
+  ],
+  [
+    "Hot Path",
+    "热路径"
+  ],
+  [
+    "Firewall Backdoor",
+    "防火墙后门"
+  ],
+  [
+    "Infinite Loop",
+    "无限循环"
+  ],
+  [
+    "Spend Energy to exactly 0",
+    "主动将能量恰好用至 0"
+  ],
+  [
+    "Draw 2 cards and restore 1 Energy",
+    "抽 2 张牌，并恢复 1 能量"
+  ],
+  [
+    "Enemy permanently gains 1 Strength",
+    "敌人永久获得 +1 攻击力"
+  ],
+  [
+    "Draw at least 1 card through a card effect",
+    "通过牌效果抽至少 1 张牌"
+  ],
+  [
+    "Draw 2 extra cards",
+    "额外抽 2 张牌"
+  ],
+  [
+    "Lose 2 HP (ignores Block)",
+    "失去 2 HP（无法格挡）"
+  ],
+  [
+    "Play 2 Attack cards",
+    "打出 2 张 Attack"
+  ],
+  [
+    "Deal 6 extra damage",
+    "额外造成 6 点伤害"
+  ],
+  [
+    "Gain at least 5 Block from one card",
+    "用一张牌获得至少 5 Block"
+  ],
+  [
+    "Gain 8 extra Block",
+    "额外获得 8 Block"
+  ],
+  [
+    "Lose 1 Energy next turn (stacks)",
+    "下一回合少 1 Energy（可叠加）"
+  ],
+  [
+    "Play 3 more cards of any kind",
+    "继续打出 3 张任意牌"
+  ],
+  [
+    "Restore 2 Energy",
+    "恢复 2 Energy"
+  ],
+  [
+    "Lose 3 HP (ignores Block)",
+    "失去 3 HP（无法格挡）"
+  ],
+  [
+    "Each trigger immediately changes the target. Bug rewards do not trigger another Bug.",
+    "每次触发立即换成 Seed 决定的新目标；Bug 奖励本身不会触发下一个 Bug。"
+  ],
+  [
+    "Only active Bug triggers add 2 scan damage",
+    "只有主动 Bug Trigger 使扫描伤害 +2"
+  ],
+  [
+    "One maintenance window is available.",
+    "有一个维护时段可用。"
+  ],
+  [
+    "OPTIONAL UPDATE FOUND",
+    "发现可选更新"
+  ],
+  [
+    "No free upgrades: repair your system or install a tool for later battles.",
+    "没有免费升级：修复现有系统，或为后续战斗安装新工具。"
+  ],
+  [
+    "SYSTEM RESTORE",
+    "系统恢复"
+  ],
+  [
+    "FEATURE UPDATE",
+    "功能更新"
+  ],
+  [
+    "Stable and predictable",
+    "稳定且可预测"
+  ],
+  [
+    "Unknown.exe asks to be useful.",
+    "未知程序请求帮忙。"
+  ],
+  [
+    "UNSIGNED PROCESS",
+    "未签名进程"
+  ],
+  [
+    "It promises to run only once. Another window seems to hide behind it.",
+    "它保证“只运行一次”。窗口背后似乎还有另一个窗口。"
+  ],
+  [
+    "RUN ANYWAY",
+    "仍然运行"
+  ],
+  [
+    "SANDBOX IT",
+    "放入沙盒"
+  ],
+  [
+    "It still knows your username",
+    "它仍然知道你的用户名"
+  ],
+  [
+    "A folder contains the Desktop.",
+    "文件夹里藏着整个桌面。"
+  ],
+  [
+    "PATH RESOLUTION FAILED",
+    "路径解析失败"
+  ],
+  [
+    "Another you is inside, wondering whether to open this folder.",
+    "里面又有一个你，正在犹豫要不要打开这个文件夹。"
+  ],
+  [
+    "FOLLOW STACK",
+    "跟随堆栈"
+  ],
+  [
+    "CLOSE WINDOW",
+    "关闭窗口"
+  ],
+  [
+    "Leave a secret fragment",
+    "留下一个 secret fragment"
+  ],
+  [
+    "Pretend you saw nothing",
+    "假装什么都没看见"
+  ],
+  [
+    "The offline printer printed your log.",
+    "离线打印机打印了你的日志。"
+  ],
+  [
+    "DEVICE NOT CONNECTED",
+    "设备未连接"
+  ],
+  [
+    "The final line predicts the next battle, but the ink has blurred.",
+    "最后一行写着下一场战斗的结果，但墨水晕开了。"
+  ],
+  [
+    "READ IT",
+    "阅读"
+  ],
+  [
+    "SHRED IT",
+    "销毁"
+  ],
+  [
+    "The scraps spell your seed",
+    "纸屑拼出了你的 Seed"
+  ],
+  [
+    "You were already logged in.",
+    "你早已登录。"
+  ],
+  [
+    "HIDDEN USER PROFILE",
+    "隐藏用户档案"
+  ],
+  [
+    "The avatar is yours. The creation date predates this computer.",
+    "头像是你。创建日期比这台电脑更早。"
+  ],
+  [
+    "OPEN PROFILE",
+    "打开档案"
+  ],
+  [
+    "COPY CACHE",
+    "复制缓存"
+  ],
+  [
+    "Antivirus recorded your visit",
+    "Antivirus 已记录访问"
+  ],
+  [
+    "Do not look back at the process list",
+    "不要回头看进程列表"
+  ],
+  [
+    "Allow background optimization?",
+    "允许后台优化吗？"
+  ],
+  [
+    "Unknown process permission",
+    "未知进程权限"
+  ],
+  [
+    " wants to optimize this turn. Both choices have a cost.",
+    " 想优化本回合资源。两个选择都有代价。"
+  ],
+  [
+    "ALLOW",
+    "允许"
+  ],
+  [
+    "NOT NOW",
+    "暂不允许"
+  ],
+  [
+    "Package Manager / Seeded reward",
+    "软件包管理 / 种子奖励"
+  ],
+  [
+    "ACT 1 COMPLETE",
+    "第一幕完成"
+  ],
+  [
+    "FATAL ERROR",
+    "致命错误"
+  ],
+  [
+    "Antivirus has lifted quarantine.",
+    "Antivirus 已撤销隔离。"
+  ],
+  [
+    "Process crashed.",
+    "进程已崩溃。"
+  ],
+  [
+    "It calls this a false alarm, but your hidden user directory is still running.",
+    "它说这是一次误报。但你的隐藏用户目录仍在运行。"
+  ],
+  [
+    "The same seed and actions can reproduce this crash.",
+    "用同一个 Seed 与操作，可以准确重现这次崩溃。"
+  ],
+  [
+    "RETURN TO RUN MENU",
+    "返回冒险菜单"
+  ],
+  [
+    "FINAL DECK",
+    "最终牌组"
+  ],
+  [
+    "backup + attack",
+    "备份 + 攻击"
+  ],
+  [
+    "file throw",
+    "文件投掷"
+  ],
+  [
+    "double click",
+    "乱点双击"
+  ],
+  [
+    "pointer thrust",
+    "指针突刺"
+  ],
+  [
+    "empty recycle bin",
+    "清空回收站"
+  ],
+  [
+    "trash buildup",
+    "垃圾堆积"
+  ],
+  [
+    "freeze + attack",
+    "冻结 + 攻击"
+  ],
+  [
+    "not responding",
+    "未响应"
+  ],
+  [
+    "memory peak",
+    "内存峰值"
+  ],
+  [
+    "memory theft",
+    "内存挪用"
+  ],
+  [
+    "FULL SCAN",
+    "全面扫描"
+  ],
+  [
+    "QUICK SCAN",
+    "快速扫描"
+  ],
+  [
+    "TRIGGERED",
+    "已触发"
+  ],
+  [
+    "TRIGGER",
+    "触发条件"
+  ],
+  [
+    "REWARD",
+    "收益"
+  ],
+  [
+    "RISK",
+    "风险"
+  ],
+  [
+    "Risk",
+    "风险"
+  ],
+  [
+    "BUG MUTATED",
+    "漏洞已变异"
+  ],
+  [
+    "BUG TRIGGERS",
+    "漏洞触发"
+  ],
+  [
+    "THIS TURN",
+    "本回合"
+  ],
+  [
+    "THIS BATTLE",
+    "本场战斗"
+  ],
+  [
+    "THREAT LEVEL",
+    "威胁等级"
+  ],
+  [
+    "ATTACKS",
+    "攻击次数"
+  ],
+  [
+    "CARDS",
+    "卡牌数"
+  ],
+  [
+    "ATTACK",
+    "攻击"
+  ],
+  [
+    "SKILL",
+    "技能"
+  ],
+  [
+    "BLOCK",
+    "格挡"
+  ],
+  [
+    "Block",
+    "格挡"
+  ],
+  [
+    "ENERGY",
+    "能量"
+  ],
+  [
+    "Energy",
+    "能量"
+  ],
+  [
+    "energy",
+    "能量"
+  ],
+  [
+    "DAMAGE",
+    "伤害"
+  ],
+  [
+    "HP",
+    "生命"
+  ],
+  [
+    "STR",
+    "力量"
+  ],
+  [
+    "Max HP",
+    "生命上限"
+  ],
+  [
+    "HAND",
+    "手牌"
+  ],
+  [
+    "TURN",
+    "回合"
+  ],
+  [
+    "DECK",
+    "牌组"
+  ],
+  [
+    "deck",
+    "牌堆"
+  ],
+  [
+    "discard",
+    "弃牌"
+  ],
+  [
+    "cards",
+    "张牌"
+  ],
+  [
+    "BATTLES",
+    "战斗次数"
+  ],
+  [
+    "BATTLE",
+    "战斗"
+  ],
+  [
+    "ELITE",
+    "精英"
+  ],
+  [
+    "BOSS",
+    "首领"
+  ],
+  [
+    "EVENT",
+    "事件"
+  ],
+  [
+    "SECRET",
+    "秘密"
+  ],
+  [
+    "PATH",
+    "路线"
+  ],
+  [
+    "OPEN",
+    "进入"
+  ],
+  [
+    "ACTIVE",
+    "生效中"
+  ],
+  [
+    "NEXT TURN",
+    "下回合"
+  ],
+  [
+    "SEED",
+    "种子"
+  ],
+  [
+    "DRAW",
+    "抽牌"
+  ],
+  [
+    "triggered",
+    "已触发"
+  ],
+  [
+    "Discard reshuffled into the deck using the seed",
+    "已按 Seed 重新载入"
+  ],
+  [
+    "Seals Bug activity",
+    "封存 Bug 活动"
+  ],
+  [
+    "Consumes debug data",
+    "吞掉调试数据"
+  ],
+  [
+    "First Attack deflected: damage -3",
+    "让第一次 Attack 偏移：伤害 -3"
+  ],
+  [
+    "Delayed process active",
+    "延迟进程生效"
+  ],
+  [
+    "Energy reduced this turn",
+    "本回合"
+  ],
+  [
+    "restored",
+    "已恢复"
+  ],
+  [
+    "Draw 2, +1 Energy",
+    "抽 2，+1 Energy"
+  ],
+  [
+    "Enemy +1 Strength",
+    "敌人 +1 攻击力"
+  ],
+  [
+    "6 extra damage",
+    "额外 6 伤害"
+  ],
+  [
+    "Next turn -1 Energy",
+    "下回合 -1 Energy"
+  ],
+  [
+    "Next battle: draw 1 more; enemy +1 Strength",
+    "下场多抽 1；敌人 +1 STR"
+  ],
+  [
+    "Next battle: +9 Block; max HP +2",
+    "下场 +9 Block · Max HP +2"
+  ],
+  [
+    "Lose 5 HP; gain a random card",
+    "失去 5 HP · 获得随机牌"
+  ],
+  [
+    "Gain Stack Trace",
+    "获得 Stack Trace"
+  ],
+  [
+    "Gain Unit Test",
+    "获得 Unit Test"
+  ],
+  [
+    "Gain Rollback",
+    "获得 Rollback"
+  ],
+  [
+    "Gain Ship It; max HP +4",
+    "获得 Ship It · Max HP +4"
+  ],
+  [
+    "Gain Cache Shield; restore 12 HP",
+    "获得 Cache Shield · 恢复 12 HP"
+  ],
+  [
+    "Restore 4–9 HP randomly",
+    "随机恢复 4–9 HP"
+  ],
+  [
+    "5 Block; draw 1",
+    "5 Block · 抽 1"
+  ],
+  [
+    "Restore 14 HP",
+    "恢复 14 HP"
+  ],
+  [
+    "Restore 7 HP",
+    "恢复 7 HP"
+  ],
+  [
+    "Lose 3 HP",
+    "失去 3 HP"
+  ],
+  [
+    "Next enemy +1 Strength",
+    "下场敌人 +1 STR"
+  ],
+  [
+    "this turn",
+    "本回合"
+  ],
+  [
+    "Deal",
+    "造成"
+  ],
+  [
+    "damage",
+    "伤害"
+  ],
+  [
+    "Gain",
+    "获得"
+  ],
+  [
+    "Restore",
+    "恢复"
+  ],
+  [
+    "Repair",
+    "修复"
+  ],
+  [
+    "Lose",
+    "失去"
+  ],
+  [
+    "Draw",
+    "抽"
+  ],
+  [
+    "extra",
+    "额外"
+  ],
+  [
+    "enemy",
+    "敌人"
+  ],
+  [
+    "attack power",
+    "攻击力"
+  ],
+  [
+    "next battle",
+    "下场"
+  ],
+  [
+    "random card",
+    "随机牌"
+  ],
+  [
+    "randomly restore",
+    "随机恢复"
+  ],
+  [
+    "draw 1 more",
+    "多抽 1"
+  ]
+]

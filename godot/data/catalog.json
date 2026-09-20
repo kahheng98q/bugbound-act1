@@ -1,0 +1,368 @@
+{
+  "cards": [
+    {
+      "key": "strike",
+      "name": "Compile Strike",
+      "code": "compile()",
+      "art": "/card-art/compile-strike.webp",
+      "cost": 1,
+      "kind": "attack",
+      "damage": 6
+    },
+    {
+      "key": "hotfix",
+      "name": "Hotfix",
+      "code": "patch --quick",
+      "art": "/card-art/hotfix.webp",
+      "cost": 1,
+      "kind": "skill",
+      "block": 6
+    },
+    {
+      "key": "duck",
+      "name": "Rubber Duck",
+      "code": "explain(issue)",
+      "art": "/card-art/rubber-duck.webp",
+      "cost": 1,
+      "kind": "skill",
+      "draw": 2
+    },
+    {
+      "key": "refactor",
+      "name": "Refactor",
+      "code": "clean(codebase)",
+      "art": "/card-art/refactor.webp",
+      "cost": 2,
+      "kind": "attack",
+      "damage": 11
+    },
+    {
+      "key": "cache",
+      "name": "Cache Shield",
+      "code": "memoize(defense)",
+      "art": "/card-art/cache-shield.webp",
+      "cost": 2,
+      "kind": "skill",
+      "block": 12
+    },
+    {
+      "key": "trace",
+      "name": "Stack Trace",
+      "code": "trace(stack)",
+      "art": "/card-art/stack-trace.webp",
+      "cost": 1,
+      "kind": "attack",
+      "damage": 4,
+      "draw": 1
+    },
+    {
+      "key": "rollback",
+      "name": "Rollback",
+      "code": "git revert pain",
+      "art": "/card-art/rollback.webp",
+      "cost": 1,
+      "kind": "skill",
+      "heal": 5
+    },
+    {
+      "key": "gc",
+      "name": "Garbage Collect",
+      "code": "gc.collect()",
+      "art": "/card-art/garbage-collect.webp",
+      "cost": 1,
+      "kind": "skill",
+      "damage": 4,
+      "block": 4
+    },
+    {
+      "key": "pair",
+      "name": "Pair Program",
+      "code": "await teammate()",
+      "art": "/card-art/pair-program.webp",
+      "cost": 0,
+      "kind": "skill",
+      "energy": 1
+    },
+    {
+      "key": "overclock",
+      "name": "Overclock",
+      "code": "cpu++",
+      "art": "/card-art/overclock.webp",
+      "cost": 2,
+      "kind": "attack",
+      "damage": 15,
+      "selfDamage": 3
+    },
+    {
+      "key": "test",
+      "name": "Unit Test",
+      "code": "expect(safe)",
+      "art": "/card-art/unit-test.webp",
+      "cost": 1,
+      "kind": "skill",
+      "block": 5,
+      "draw": 1
+    },
+    {
+      "key": "ship",
+      "name": "Ship It",
+      "code": "deploy --force",
+      "art": "/card-art/ship-it.webp",
+      "cost": 3,
+      "kind": "attack",
+      "damage": 22
+    },
+    {
+      "key": "nectar",
+      "name": "Nectar Cache",
+      "cost": 0,
+      "kind": "skill",
+      "code": "cache(energy)",
+      "description": "Bank all remaining Energy. Recover it next turn. Gain 1 Nectar. Exhaust.",
+      "exhausted": true
+    },
+    {
+      "key": "pollen",
+      "name": "Pollen Pipeline",
+      "cost": 1,
+      "kind": "skill",
+      "code": "pipe(next, after)",
+      "description": "Copy half the next card’s damage and Block onto the following card. Carries across turns.",
+      "exhausted": false
+    },
+    {
+      "key": "waggle",
+      "name": "Waggle Debugger",
+      "cost": 1,
+      "kind": "skill",
+      "code": "inspect(top3)",
+      "description": "Inspect up to 3 cards. Choose one to draw, then arrange the rest on top. Exhaust.",
+      "exhausted": true
+    },
+    {
+      "key": "comb",
+      "name": "Honeycomb Compiler",
+      "cost": 1,
+      "kind": "skill",
+      "code": "compile(6)",
+      "description": "This battle: every 6 cards replay the first card’s printed damage, Block, draw and healing. Exhaust.",
+      "exhausted": true
+    },
+    {
+      "key": "guard",
+      "name": "Hive Interrupt",
+      "cost": 1,
+      "kind": "skill",
+      "code": "onHit(retaliate)",
+      "description": "Gain 5 Block. The next enemy hit that hurts you triggers 8 retaliation damage. Stacks.",
+      "block": 5,
+      "exhausted": false
+    },
+    {
+      "key": "sting",
+      "name": "Sting Commit",
+      "cost": 1,
+      "kind": "attack",
+      "code": "commit(stinger)",
+      "description": "Deal 24 damage. Permanently lose this copy from your run deck.",
+      "damage": 24,
+      "exhausted": false
+    },
+    {
+      "key": "swarm",
+      "name": "Swarm Loop",
+      "cost": 1,
+      "kind": "attack",
+      "code": "forEach(nectar)",
+      "description": "Spend all Nectar. Deal 3 damage, then 3 more per Nectar spent. Counts as one Attack.",
+      "exhausted": false
+    },
+    {
+      "key": "jelly",
+      "name": "Royal Jelly Refactor",
+      "cost": 1,
+      "kind": "skill",
+      "code": "upgrade(card)",
+      "description": "Spend 2 Nectar: choose a card in hand costing 1+. Reduce its cost by 1 this battle. Exhaust.",
+      "exhausted": true
+    }
+  ],
+  "enemies": {
+    "folder": {
+      "name": "Corrupted Folder",
+      "process": "folder.exe",
+      "icon": "📁",
+      "hp": 35,
+      "kind": "battle",
+      "feature": "Chooses file throwing or self-backup based on the seed."
+    },
+    "cursor": {
+      "name": "Broken Cursor",
+      "process": "cursor.dll",
+      "icon": "↖",
+      "hp": 32,
+      "kind": "battle",
+      "feature": "Your first Attack each turn deals 3 less damage."
+    },
+    "trash": {
+      "name": "Trash Beast",
+      "process": "recycle.bin",
+      "icon": "🗑",
+      "hp": 44,
+      "kind": "battle",
+      "feature": "Attack damage slowly increases each turn."
+    },
+    "frozen": {
+      "name": "Frozen Window",
+      "process": "window_404.exe",
+      "icon": "❐",
+      "hp": 40,
+      "kind": "battle",
+      "feature": "Gains 3 Block whenever you trigger a Bug."
+    },
+    "memoryHog": {
+      "name": "Memory Hog",
+      "process": "memory_hog.exe",
+      "icon": "🐗",
+      "hp": 62,
+      "kind": "elite",
+      "feature": "Permanently gains 2 Strength for every 2 Bugs you trigger."
+    },
+    "antivirus": {
+      "name": "Antivirus",
+      "process": "antivirus.sys",
+      "icon": "🛡",
+      "hp": 92,
+      "kind": "boss",
+      "feature": "Bug triggers increase Threat; ordinary attacks and defense do not."
+    }
+  },
+  "bugs": {
+    "overflow": {
+      "name": "Overflow",
+      "code": "BUG_ENERGY_01",
+      "category": "ENERGY",
+      "icon": "⚡",
+      "trigger": "Spend Energy to exactly 0",
+      "reward": "Draw 2 cards and restore 1 Energy",
+      "risk": "Enemy permanently gains 1 Strength"
+    },
+    "memory": {
+      "name": "Memory Leak",
+      "code": "BUG_DRAW_02",
+      "category": "DRAW",
+      "icon": "▦",
+      "trigger": "Draw at least 1 card through a card effect",
+      "reward": "Draw 2 extra cards",
+      "risk": "Lose 2 HP (ignores Block)"
+    },
+    "hotPath": {
+      "name": "Hot Path",
+      "code": "BUG_ATTACK_03",
+      "category": "ATTACK",
+      "icon": "⚔",
+      "trigger": "Play 2 Attack cards",
+      "reward": "Deal 6 extra damage",
+      "risk": "Lose 2 HP (ignores Block)",
+      "target": 2,
+      "progressLabel": "ATTACKS"
+    },
+    "firewall": {
+      "name": "Firewall Backdoor",
+      "code": "BUG_BLOCK_04",
+      "category": "BLOCK",
+      "icon": "⬡",
+      "trigger": "Gain at least 5 Block from one card",
+      "reward": "Gain 8 extra Block",
+      "risk": "Lose 1 Energy next turn (stacks)"
+    },
+    "loop": {
+      "name": "Infinite Loop",
+      "code": "BUG_INPUT_05",
+      "category": "CARDS",
+      "icon": "∞",
+      "trigger": "Play 3 more cards of any kind",
+      "reward": "Restore 2 Energy",
+      "risk": "Lose 3 HP (ignores Block)",
+      "target": 3,
+      "progressLabel": "CARDS"
+    }
+  },
+  "events": {
+    "update": {
+      "title": "One maintenance window is available.",
+      "eyebrow": "OPTIONAL UPDATE FOUND",
+      "body": "No free upgrades: repair your system or install a tool for later battles.",
+      "left": [
+        "SYSTEM RESTORE",
+        "Restore 14 HP",
+        "Stable and predictable"
+      ],
+      "right": [
+        "FEATURE UPDATE",
+        "Gain Unit Test",
+        "5 Block; draw 1"
+      ]
+    },
+    "unknownExe": {
+      "title": "Unknown.exe asks to be useful.",
+      "eyebrow": "UNSIGNED PROCESS",
+      "body": "It promises to run only once. Another window seems to hide behind it.",
+      "left": [
+        "RUN ANYWAY",
+        "Lose 5 HP; gain a random card",
+        "Next battle: draw 1 more; enemy +1 Strength"
+      ],
+      "right": [
+        "SANDBOX IT",
+        "Next battle: +9 Block; max HP +2",
+        "It still knows your username"
+      ]
+    },
+    "recursiveFolder": {
+      "title": "A folder contains the Desktop.",
+      "eyebrow": "PATH RESOLUTION FAILED",
+      "body": "Another you is inside, wondering whether to open this folder.",
+      "left": [
+        "FOLLOW STACK",
+        "Lose 3 HP · Gain Stack Trace",
+        "Leave a secret fragment"
+      ],
+      "right": [
+        "CLOSE WINDOW",
+        "Restore 7 HP",
+        "Pretend you saw nothing"
+      ]
+    },
+    "printerGhost": {
+      "title": "The offline printer printed your log.",
+      "eyebrow": "DEVICE NOT CONNECTED",
+      "body": "The final line predicts the next battle, but the ink has blurred.",
+      "left": [
+        "READ IT",
+        "Restore 4–9 HP randomly",
+        "Next enemy +1 Strength"
+      ],
+      "right": [
+        "SHRED IT",
+        "Gain Rollback",
+        "The scraps spell your seed"
+      ]
+    },
+    "secretRoot": {
+      "title": "You were already logged in.",
+      "eyebrow": "HIDDEN USER PROFILE",
+      "body": "The avatar is yours. The creation date predates this computer.",
+      "left": [
+        "OPEN PROFILE",
+        "Gain Ship It; max HP +4",
+        "Antivirus recorded your visit"
+      ],
+      "right": [
+        "COPY CACHE",
+        "Gain Cache Shield; restore 12 HP",
+        "Do not look back at the process list"
+      ]
+    }
+  }
+}

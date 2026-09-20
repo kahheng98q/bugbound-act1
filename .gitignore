@@ -1,9 +1,5 @@
-node_modules
-.pnpm-store
-.next
-.vinext
-dist
-.wrangler
 .env*
 *.log
 work/
+godot/.godot/
+godot/exports/
