@@ -85,13 +85,22 @@ func reset_hover(view: Control) -> void:
 func card_play(card: Control, target_position: Vector2, on_impact: Callable = Callable()) -> Tween:
 	if not is_instance_valid(card): return null
 	_center_pivot(card)
+	var origin_position := card.position
+	var origin_scale := card.scale
+	var origin_rotation := card.rotation
 	var tween := _track(create_tween().bind_node(card))
+	var anticipation := _duration(settings.anticipation_duration)
+	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	tween.tween_property(card, "position", origin_position - Vector2(0, settings.anticipation_lift), anticipation)
+	tween.parallel().tween_property(card, "scale", origin_scale * settings.anticipation_scale, anticipation)
+	tween.parallel().tween_property(card, "rotation", origin_rotation - settings.play_rotation * 0.35, anticipation)
 	tween.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 	tween.tween_property(card, "position", _center_target(card, target_position), _duration(settings.play_duration))
-	tween.parallel().tween_property(card, "rotation", card.rotation + 0.10, _duration(settings.play_duration))
-	tween.parallel().tween_property(card, "scale", card.scale * 0.88, _duration(settings.play_duration))
+	tween.parallel().tween_property(card, "rotation", origin_rotation + settings.play_rotation, _duration(settings.play_duration))
+	tween.parallel().tween_property(card, "scale", origin_scale * 0.86, _duration(settings.play_duration))
 	tween.tween_callback(func():
 		if not is_instance_valid(card): return
+		_impact_burst(target_position, Color("67e8f9"))
 		if on_impact.is_valid(): on_impact.call()
 		card.queue_free())
 	return tween
@@ -101,14 +110,16 @@ func enemy_damage(actor: Control, amount: int, on_finished: Callable = Callable(
 	if not is_instance_valid(actor): return null
 	_replace_actor_effect(actor)
 	var state := _remember(actor)
+	var impact_point := actor.get_global_rect().get_center()
 	var popup := _damage_popup(amount, actor.global_position + Vector2(actor.size.x * 0.5, 0))
-	_flash(actor, Color(1.35, 1.18, 0.82, 1.0), settings.flash_duration)
+	_flash(actor, Color(1.55, 1.30, 0.88, 1.0), settings.flash_duration)
+	_impact_burst(impact_point, Color("ffd166"))
 	var tween := _track(create_tween().bind_node(actor))
 	_actor_effects[actor.get_instance_id()] = tween
 	var duration := _duration(settings.damage_duration)
 	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	tween.tween_property(actor, "position:x", state.position.x - 9.0, duration * 0.25)
-	tween.tween_property(actor, "position:x", state.position.x + 7.0, duration * 0.25)
+	tween.tween_property(actor, "position:x", state.position.x - settings.damage_knockback, duration * 0.22)
+	tween.tween_property(actor, "position:x", state.position.x + settings.damage_knockback * 0.55, duration * 0.28)
 	tween.tween_property(actor, "position", state.position, duration * 0.50)
 	_popup_motion(popup, settings.damage_popup_duration)
 	if settings.flash_duration > duration: tween.tween_interval(settings.flash_duration - duration)
@@ -127,11 +138,13 @@ func enemy_death(actor: Control, on_finished: Callable = Callable()) -> Tween:
 	var tween := _track(create_tween().bind_node(actor))
 	_actor_effects[actor.get_instance_id()] = tween
 	var duration := _duration(settings.death_duration)
-	tween.tween_property(actor, "position:x", state.position.x - 5.0, duration * 0.16)
-	tween.tween_property(actor, "position:x", state.position.x + 5.0, duration * 0.16)
-	tween.tween_property(actor, "position", state.position, duration * 0.18)
-	tween.parallel().tween_property(actor, "scale", state.scale * 0.05, duration * 0.68)
-	tween.parallel().tween_property(actor, "modulate:a", 0.0, duration * 0.68)
+	_impact_burst(actor.get_global_rect().get_center(), Color("ff6b6b"))
+	tween.tween_property(actor, "position:x", state.position.x - 7.0, duration * 0.12)
+	tween.tween_property(actor, "position:x", state.position.x + 7.0, duration * 0.12)
+	tween.tween_property(actor, "position", state.position, duration * 0.12)
+	tween.parallel().tween_property(actor, "scale", Vector2(state.scale.x * settings.death_squash, state.scale.y / settings.death_squash), duration * 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(actor, "scale", state.scale * 0.05, duration * 0.64).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.parallel().tween_property(actor, "modulate:a", 0.0, duration * 0.64)
 	tween.tween_callback(func():
 		if is_instance_valid(actor):
 			_restores.erase(actor.get_instance_id())
@@ -147,7 +160,11 @@ func monitor_complete(monitor: Control, progress: Control, completion_text: Stri
 	if is_instance_valid(monitor):
 		screen_shake(monitor, 5.0, duration)
 	if is_instance_valid(progress):
-		_flash(progress, Color(1.35, 1.14, 0.62, 1.0), settings.flash_duration)
+		_flash(progress, Color(1.50, 1.26, 0.70, 1.0), settings.monitor_flash_duration)
+	var alert_center := monitor.get_global_rect().get_center() if is_instance_valid(monitor) else target_position
+	_impact_burst(alert_center, Color("67e8f9"))
+	_system_flash(Color("67e8f9"), settings.monitor_flash_duration)
+	_scanline(Color("67e8f9"))
 	var pop := _text_popup(completion_text, monitor.global_position + Vector2(10, 4) if is_instance_valid(monitor) else target_position)
 	_center_pivot(pop)
 	pop.scale = Vector2.ONE * 0.7
@@ -172,6 +189,81 @@ func monitor_complete(monitor: Control, progress: Control, completion_text: Stri
 		if is_instance_valid(reward_icon): reward_icon.queue_free()
 		_remove_flashes(progress))
 	return tween
+
+
+func show_system_alert(message: String, color_type := "cyan", shake_target: Control = null) -> Tween:
+	_ensure_layer()
+	var color := Color("67e8f9")
+	match color_type.to_lower():
+		"red": color = Color("ff5c6c")
+		"purple": color = Color("c084fc")
+	_system_flash(color, settings.alert_flash_duration)
+	_scanline(color)
+	var label := _text_popup(message, effects_root.size * 0.5)
+	label.add_theme_font_size_override("font_size", 34)
+	label.add_theme_color_override("font_color", color)
+	_center_pivot(label)
+	label.position -= label.size * 0.5
+	label.scale = Vector2.ONE * 0.72
+	if is_instance_valid(shake_target):
+		screen_shake(shake_target, settings.alert_shake_intensity, settings.alert_flash_duration + settings.scanline_duration)
+	var tween := _track(create_tween().bind_node(label))
+	var duration := _duration(settings.alert_duration)
+	tween.tween_property(label, "scale", Vector2.ONE * 1.08, duration * 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(label, "scale", Vector2.ONE, duration * 0.12)
+	tween.tween_interval(duration * 0.35)
+	tween.tween_property(label, "modulate:a", 0.0, duration * 0.35)
+	tween.tween_callback(func(): if is_instance_valid(label): label.queue_free())
+	return tween
+
+
+func _impact_burst(at: Vector2, color: Color) -> void:
+	_ensure_layer()
+	var ring := Panel.new()
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ring.size = Vector2.ONE * settings.impact_burst_size
+	ring.pivot_offset = ring.size * 0.5
+	ring.global_position = at - ring.size * 0.5
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(color, 0.12)
+	style.border_color = Color(color, 0.92)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(int(settings.impact_burst_size * 0.5))
+	ring.add_theme_stylebox_override("panel", style)
+	effects_root.add_child(ring)
+	ring.scale = Vector2.ONE * 0.25
+	var tween := _track(create_tween().bind_node(ring))
+	var duration := _duration(settings.impact_burst_duration)
+	tween.tween_property(ring, "scale", Vector2.ONE * 1.35, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(ring, "modulate:a", 0.0, duration)
+	tween.tween_callback(ring.queue_free)
+
+
+func _system_flash(color: Color, duration: float) -> void:
+	_ensure_layer()
+	var flash := ColorRect.new()
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	flash.color = Color(color, 0.0)
+	effects_root.add_child(flash)
+	var tween := _track(create_tween().bind_node(flash))
+	var d := _duration(duration)
+	tween.tween_property(flash, "color:a", 0.22, d * 0.35)
+	tween.tween_property(flash, "color:a", 0.0, d * 0.65)
+	tween.tween_callback(flash.queue_free)
+
+
+func _scanline(color: Color) -> void:
+	_ensure_layer()
+	var line := ColorRect.new()
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	line.color = Color(color, 0.48)
+	line.size = Vector2(maxf(effects_root.size.x, 1280.0), 5.0)
+	line.position = Vector2(0, -line.size.y)
+	effects_root.add_child(line)
+	var tween := _track(create_tween().bind_node(line))
+	tween.tween_property(line, "position:y", maxf(effects_root.size.y, 720.0) + line.size.y, _duration(settings.scanline_duration)).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_callback(line.queue_free)
 
 
 func screen_shake(target: Control, intensity: float = -1.0, duration: float = -1.0) -> Tween:
