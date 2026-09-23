@@ -95,7 +95,7 @@ func service_lifecycle() -> void:
 	check(not ghost.disabled and ghost.theme == host.theme, "Copy retains button state and inherited theme")
 	var flight := feel.card_play(ghost, Vector2(500, 260), impact)
 	flight.pause()
-	flight.custom_step(feel.settings.play_duration * 0.5)
+	flight.custom_step(feel.settings.anticipation_duration + feel.settings.play_duration * 0.25)
 	check(impacts == 0, "Impact is not called before arrival")
 	var halfway := ghost.get_global_transform() * (ghost.size * 0.5)
 	check(halfway.distance_to(Vector2(500, 260)) > 30, "Flight visibly travels toward its target")
@@ -121,6 +121,9 @@ func service_lifecycle() -> void:
 	feel.screen_shake(actor, 3, 0.16)
 	await settle(0.24)
 	check(actor.position.is_equal_approx(origin), "Overlapping shakes do not drift")
+	feel.show_system_alert("CRITICAL ERROR", "red", host)
+	await settle(0.9)
+	check(feel.effects_root.get_child_count() == 0, "System alert cleans up overlay, scanline, and text")
 	feel.enemy_damage(actor, 3)
 	feel.screen_shake(host, 5, 0.3)
 	await process_frame
@@ -142,6 +145,7 @@ func service_lifecycle() -> void:
 	await settle(0.08)
 	check(actor.modulate.a < 0.01 and actor.scale.x < 0.1, "Death shrinks and fades the visual")
 	feel.settings.play_duration = 0
+	feel.settings.anticipation_duration = 0
 	ghost = feel.snapshot(actor)
 	feel.card_play(ghost, Vector2.ZERO, impact)
 	await settle(0.02)
