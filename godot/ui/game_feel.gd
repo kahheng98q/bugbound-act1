@@ -213,7 +213,8 @@ func show_system_alert(message: String, color_type := "cyan", shake_target: Cont
 	tween.tween_property(label, "scale", Vector2.ONE, duration * 0.12)
 	tween.tween_interval(duration * 0.35)
 	tween.tween_property(label, "modulate:a", 0.0, duration * 0.35)
-	tween.tween_callback(func(): if is_instance_valid(label): label.queue_free())
+	tween.tween_callback(func():
+		if is_instance_valid(label): label.queue_free())
 	return tween
 
 
