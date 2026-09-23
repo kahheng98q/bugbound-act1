@@ -48,10 +48,30 @@ func state(run: RunState) -> Array:
 func _run() -> void:
 	root.content_scale_size = Vector2i.ZERO
 	root.size = Vector2i(1280, 720)
+	bee_frames()
 	await service_lifecycle()
 	await ui_integration()
 	print("BUGBOUND GAME FEEL: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures else 0)
+
+func bee_frames() -> void:
+	var bee = load("res://ui/bee_portrait.gd").new()
+	var source: Image = bee.SHEET.get_image()
+	check(source.get_pixel(0, 0).a == 0.0, "Bee artwork has native transparency")
+	var previous := PackedByteArray()
+	for index in range(16):
+		bee.restore_pose(Vector2((index + 0.1) * bee.IDLE_FRAME_SECONDS, -1.0) if index < 8 else Vector2(0.0, (index - 8 + 0.1) * bee.ATTACK_FRAME_SECONDS))
+		check(bee.frame_index == index, "Animation selects frame %d" % index)
+		var pixels := source.get_region(Rect2i(bee.atlas.region)).get_data()
+		check(pixels != previous, "Frame %d contains distinct artwork" % index)
+		previous = pixels
+	bee.attack()
+	bee._process(0.3)
+	bee.attack()
+	check(bee.frame_index == 8, "Rapid attacks restart from wind-up")
+	bee._process(0.7)
+	check(bee.frame_index < 8, "Attack completion resumes idle frames")
+	bee.free()
 
 func service_lifecycle() -> void:
 	var host := Control.new()
@@ -140,6 +160,19 @@ func ui_integration() -> void:
 	expected.start("BUG-404-LOL")
 	expected.enter("t0l0")
 	await settle()
+	var bee: Control = game.combat_feedback.player
+	var bee_slot: Control = bee.get_parent()
+	var bee_origin := bee.position
+	var idle_frame: int = bee.frame_index
+	var slot_origin := bee_slot.position
+	await settle(0.3)
+	check(bee.frame_index != idle_frame and bee.frame_index < 8, "Idle advances artwork frames")
+	check(bee_slot.position == slot_origin and bee.position == bee_origin, "Idle changes artwork without translating the image")
+	var pose := Vector2(bee.idle_time, bee.attack_time)
+	game.render()
+	check(Vector2(game.combat_feedback.player.idle_time, game.combat_feedback.player.attack_time) == pose, "UI rebuild preserves animation phase")
+	# Snapshot the laid-out monitor, not the zero-size controls just rebuilt above.
+	await settle()
 	var monitor: Control = game.combat_feedback.monitor
 	var monitor_copy: Control = game.game_feel.snapshot(monitor)
 	await process_frame
@@ -169,10 +202,12 @@ func ui_integration() -> void:
 	expected.play(id)
 	check(state(game.run) == state(expected), "Combat resolves immediately before visual impact")
 	await settle(0.10)
+	check(game.combat_feedback.player.frame_index >= 8, "Attack artwork plays after the UI rebuild")
 	await screenshot("card-flight")
 	await settle(0.22)
 	await screenshot("enemy-damage")
 	await settle(0.7)
+	check(game.combat_feedback.player.frame_index < 8 and game.combat_feedback.player.attack_time < 0.0, "Bee returns to idle artwork after attacking")
 	check(state(game.run) == state(expected), "Finishing effects never changes gameplay or RNG")
 	# Two rapid actions, including a monitor trigger, must match direct rules exactly.
 	for i in range(2):

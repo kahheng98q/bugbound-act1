@@ -14,6 +14,23 @@ The UI uses illustrated paper cards, a connected route map, health bars, a dedic
 bug monitor, and centered dialogs. English and Chinese are available in the header.
 The hand scrolls horizontally when it contains more cards than fit in the window.
 
+Combat shows incoming damage after current Block (including lethal warnings),
+marks playable cards that trigger the active bug, and explains its reward/risk
+on hover or keyboard focus. Swarm Loop shows its current damage; Nectar tooltips
+explain spending it. The first battle includes guidance that can be dismissed
+for the rest of the session. Route nodes show encounter traits and clarify
+matching encounters. Installing or skipping a reward confirms the choice on the map.
+
+Combat rules resolve immediately; the previous arena remains visible until its
+defeat and bug effects finish, then reward content appears without overlapping
+combat effects. Navigation or rebuilding the screen cancels that presentation.
+
+Read-only preview parity checks (including RNG preservation):
+
+```powershell
+.\run-godot.ps1 --headless --path godot --script res://tests/test_experience.gd
+```
+
 ## GameFeel
 
 `ui/game_feel.gd` is the reusable presentation service. The main scene exposes
@@ -29,6 +46,11 @@ at render time. It starts enemy damage/death, monitor completion, and screen sha
 without changing `core/` or delaying actions. One action displays its net HP loss;
 fully absorbed hits do not display a damage number. Monitor completion displays
 the completed bug while its replacement is already active in the rules.
+
+The bee uses `assets/bee-animation.png`, a transparent 4×4 sprite sheet: eight
+idle frames with wing/eye/limb changes and eight attack frames. `ui/bee_portrait.gd`
+plays idle at 6.25 FPS and attacks at 13.33 FPS, then returns to idle. The image
+slot stays fixed. Animation phase survives battle UI rebuilds without consuming RNG.
 
 ```gdscript
 var feel := GameFeel.new()

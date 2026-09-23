@@ -17,9 +17,10 @@ var rewards: Array = []
 var battles_won := 0
 var bugs_triggered := 0
 var elites_defeated := 0
+var loadout_key := "balanced"
 var flags := {"daemonDraw": 0, "startingBlock": 0, "secretFragments": 0, "secretUnlocked": false, "printerDebt": false}
 
-func start(seed_text: String) -> void:
+func start(seed_text: String, starting_build := "balanced") -> void:
 	if battle: battle.run = null
 	battle = null
 	rng = SeededRng.new(seed_text)
@@ -27,7 +28,8 @@ func start(seed_text: String) -> void:
 	hp = 48
 	max_hp = 48
 	cards = []
-	for key in Catalog.STARTER: cards.append(Catalog.card(key))
+	loadout_key = starting_build if Catalog.LOADOUTS.has(starting_build) else "balanced"
+	for key in Catalog.LOADOUTS[loadout_key].cards: cards.append(Catalog.card(key))
 	serial = 1
 	tier = 0
 	completed = []
@@ -80,7 +82,10 @@ func settle() -> void:
 		if Catalog.data.enemies[battle.enemy_key].kind == "elite": elites_defeated += 1
 		screen = "victory" if battle.enemy_key == "antivirus" else "reward"
 		if screen == "reward":
-			rewards = rng.shuffled(Catalog.data.cards.filter(func(card): return card.key in Catalog.BEE)).slice(0, 3)
+			rewards = []
+			# Each offer supports a different strategy; the pools do not overlap.
+			for style in Catalog.REWARD_POOLS:
+				rewards.append(Catalog.card(rng.pick(Catalog.REWARD_POOLS[style])))
 	if screen != "battle":
 		battle.run = null
 		battle = null

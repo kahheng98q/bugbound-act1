@@ -66,10 +66,48 @@ func next_intent() -> void:
 		"trash": intent = {"damage": 6 + int(floor(turn / 2.0)) * 2 + (3 if value < .22 else 0), "block": 0, "label": "empty recycle bin" if value < .22 else "trash buildup"}
 		"frozen": intent = {"damage": 5 if value < .42 else 9, "block": 7 if value < .42 else 0, "label": "freeze + attack" if value < .42 else "not responding"}
 		"memoryHog": intent = {"damage": 14 if value < .3 else 9, "block": 0, "label": "memory peak" if value < .3 else "memory theft"}
+		"sentinel": intent = {"damage": 6 if turn % 2 == 1 else 11, "block": 8 if turn % 2 == 1 else 0, "label": "raise firewall" if turn % 2 == 1 else "firewall discharge"}
+		"wasp": intent = {"damage": 14 if turn % 3 == 0 else 4, "block": 0, "label": "clock strike" if turn % 3 == 0 else "winding gears"}
 		_: intent = {"damage": 13 if value < .3 else 8, "block": 0, "label": "FULL SCAN" if value < .3 else "QUICK SCAN"}
 
 func intent_damage() -> int:
 	return intent.damage + strength + (threat * 2 if enemy_key == "antivirus" else 0)
+
+func incoming_damage() -> int:
+	return maxi(0, intent_damage() - block)
+
+func card_effects(card: Dictionary) -> Dictionary:
+	var damage: int = 3 * (1 + bee.nectar) if card.key == "swarm" else card.get("damage", 0)
+	var gained_block: int = card.get("block", 0)
+	match card.get("scaling", ""):
+		"nectar_damage": damage += 2 * bee.nectar
+		"nectar_block": gained_block += 2 * bee.nectar
+		"block_damage": damage += mini(block, 12)
+		"attacks_damage": damage += 3 * attacks
+	if bee.pollen == 1:
+		damage += bee.damage
+		gained_block += bee.block
+	var pollen_damage := damage
+	if enemy_key == "cursor" and card.kind == "attack" and attacks == 0:
+		damage = maxi(0, damage - 3)
+	return {"damage": damage, "block": gained_block, "pollen_damage": pollen_damage}
+
+func bug_matches(card: Dictionary, gained_block: int, energy_after_spend: int, has_draw_choice: bool) -> bool:
+	match bug:
+		"overflow": return card.cost > 0 and energy_after_spend == 0
+		"memory": return card.get("draw", 0) > 0 or (card.key == "waggle" and has_draw_choice)
+		"hotPath": return progress + int(card.kind == "attack") >= 2
+		"firewall": return gained_block >= 5
+		"loop": return progress + 1 >= 3
+	return false
+
+func preview_card(card: Dictionary) -> Dictionary:
+	# Read-only: shares rule calculations and never draws cards or advances RNG.
+	var effects := card_effects(card)
+	effects.triggers_bug = can_play(card) and bug_matches(card, effects.block, energy - card.cost,
+		not deck.is_empty() or not discard.is_empty() or not card.get("exhausted", false))
+	effects.nectar_spent = bee.nectar if card.key == "swarm" else (2 if card.key == "jelly" else 0)
+	return effects
 
 func damage_enemy(amount: int) -> void:
 	var absorbed := mini(enemy_shield, amount)
@@ -91,19 +129,18 @@ func play(id: int) -> bool:
 	hand.erase(card)
 	energy -= card.cost
 	var energy_after_spend := energy
-	var damage: int = 3 * (1 + bee.nectar) if card.key == "swarm" else card.get("damage", 0)
-	var gained_block: int = card.get("block", 0)
+	var effects := card_effects(card)
+	var damage: int = effects.damage
+	var gained_block: int = effects.block
 	if card.key == "swarm": bee.nectar = 0
 	if bee.pollen == 2:
-		bee.damage = int(floor(damage / 2.0))
+		bee.damage = int(floor(effects.pollen_damage / 2.0))
 		bee.block = int(floor(gained_block / 2.0))
 		bee.pollen = 1
 	elif bee.pollen == 1:
-		damage += bee.damage
-		gained_block += bee.block
 		bee.pollen = 0
-	if enemy_key == "cursor" and card.kind == "attack" and attacks == 0:
-		damage = maxi(0, damage - 3)
+	if enemy_key == "sentinel" and card.kind == "skill":
+		enemy_shield = maxi(0, enemy_shield - 2)
 	damage_enemy(damage)
 	block += gained_block
 	hp = maxi(0, mini(run.max_hp, hp + card.get("heal", 0)) - card.get("selfDamage", 0))
@@ -116,6 +153,7 @@ func play(id: int) -> bool:
 				run.cards.remove_at(i)
 				break
 	if card.kind == "attack" and attacks == 0: bee.nectar += 1
+	bee.nectar += card.get("nectarGain", 0)
 	match card.key:
 		"nectar":
 			bee.bank += energy
@@ -145,19 +183,11 @@ func play(id: int) -> bool:
 			bee.comb = 0
 			bee.first = {}
 	if card.key == "comb": bee.compiling = true
+	var triggered := bug_matches(card, gained_block, energy_after_spend, not choice.is_empty())
+	if bug == "hotPath" and card.kind == "attack": progress += 1
+	if bug == "loop": progress += 1
 	if card.kind == "attack": attacks += 1
 	log.push_front(card.name + " // " + Catalog.describe(card))
-	var triggered := false
-	match bug:
-		"overflow": triggered = card.cost > 0 and energy_after_spend == 0
-		"memory": triggered = card.get("draw", 0) > 0 or (card.key == "waggle" and not choice.is_empty())
-		"hotPath":
-			if card.kind == "attack": progress += 1
-			triggered = progress >= 2
-		"firewall": triggered = gained_block >= 5
-		"loop":
-			progress += 1
-			triggered = progress >= 3
 	if triggered: trigger_bug()
 	return true
 
@@ -190,7 +220,7 @@ func trigger_bug() -> void:
 
 func end_turn() -> bool:
 	if popup_open or not choice.is_empty() or hp <= 0 or enemy_hp <= 0: return false
-	var taken := maxi(0, intent_damage() - block)
+	var taken := incoming_damage()
 	hp = maxi(0, hp - taken)
 	log.push_front("%s: %d damage · HP -%d" % [intent.label, intent_damage(), taken])
 	if hp <= 0: return true

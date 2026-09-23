@@ -2,8 +2,10 @@ extends Control
 ## Presentation only; RunState owns every gameplay action.
 const CARD_SCENE = preload("res://scenes/card.tscn")
 const ROUTE_BOARD = preload("res://ui/route_board.gd")
+const ROUTE_DETAILS = preload("res://ui/route_details.gd")
 const PAPER_SHADER = preload("res://ui/paper_cutout.gdshader")
 const FEEDBACK = preload("res://ui/combat_feedback.gd")
+const BEE_PORTRAIT = preload("res://ui/bee_portrait.gd")
 @export var game_feel_settings: GameFeelSettings = preload("res://ui/default_game_feel.tres")
 var game_feel := GameFeel.new()
 var combat_feedback := FEEDBACK.new()
@@ -25,11 +27,16 @@ var translations := {}
 var mono := SystemFont.new()
 var last_screen := ""
 var feedback := ""
+var guidance_dismissed := false
+var bug_lesson := ""
+var route_notice := ""
+var selected_loadout := "balanced"
 
 func _ready() -> void:
 	mono.font_names = PackedStringArray(["Consolas", "DejaVu Sans Mono", "monospace"])
 	var config := ConfigFile.new()
-	if config.load("user://settings.cfg") == OK: language = config.get_value("ui", "language", "en")
+	if config.load("user://settings.cfg") == OK:
+		language = config.get_value("ui", "language", "en")
 	build_matcher()
 	theme = make_theme()
 	game_feel.settings = game_feel_settings
@@ -193,6 +200,8 @@ func centered(parent: Node, width := 840) -> VBoxContainer:
 
 func render() -> void:
 	combat_feedback.before_render(run)
+	if run.screen in ["menu", "battle", "event"]: route_notice = ""
+	if last_screen != "battle" and run.screen == "battle": bug_lesson = ""
 	if last_screen != "battle" or run.screen != "battle": feedback = ""
 	for child in get_children():
 		if child == game_feel or child == combat_feedback: continue
@@ -207,7 +216,7 @@ func render() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	margin.add_child(scroll)
 	content = column(scroll)
-	content.add_theme_constant_override("separation", 12)
+	content.add_theme_constant_override("separation", 6 if run.screen == "map" else 12)
 	var header := row(content, 20)
 	var brand := column(header)
 	brand.add_theme_constant_override("separation", 0)
@@ -241,22 +250,40 @@ func toggle_language() -> void:
 	language = "zh" if language == "en" else "en"
 	build_matcher()
 	var config := ConfigFile.new()
+	config.load("user://settings.cfg")
 	config.set_value("ui", "language", language)
 	config.save("user://settings.cfg")
 	render()
 
+func dismiss_guidance() -> void:
+	guidance_dismissed = true
+	render()
+
 func menu_screen() -> void:
-	spacer(content, 22)
+	spacer(content, 8)
 	var layout := row(content, 36)
 	var intro := column(layout)
 	intro.size_flags_stretch_ratio = 1.08
 	tag(intro, "ROGUELIKE DECKBUILDER  /  ACT 01", HONEY)
-	label(intro, "Small bug.\nBig system.", 76)
-	label(intro, "You’re a programmer trapped inside a computer.\nTurn its bugs into your best commands.", 23, MUTED)
+	label(intro, "Small bug.\nBig system.", 54)
+	label(intro, "You’re a programmer trapped inside a computer.\nTurn its bugs into your best commands.", 18, MUTED)
 	spacer(intro, 8)
-	var boot := panel(intro, SURFACE, LINE, 24)
-	tag(boot, "BOOT SEQUENCE READY", MINT)
-	button(boot, "NEW RUN    →", func(): run.start(Crypto.new().generate_random_bytes(8).hex_encode()), false, true).custom_minimum_size.y = 62
+	var boot := panel(intro, SURFACE, LINE, 16)
+	boot.add_theme_constant_override("separation", 8)
+	tag(boot, "CHOOSE YOUR BUILD", MINT)
+	var builds := OptionButton.new()
+	builds.name = "StartingBuild"
+	builds.custom_minimum_size.y = 40
+	for key in Catalog.LOADOUTS:
+		builds.add_item(localize(Catalog.LOADOUTS[key].name))
+	builds.selected = Catalog.LOADOUTS.keys().find(selected_loadout)
+	boot.add_child(builds)
+	var build_hint := label(boot, Catalog.LOADOUTS[selected_loadout].hint, 15, MUTED)
+	build_hint.name = "BuildHint"
+	builds.item_selected.connect(func(index):
+		selected_loadout = Catalog.LOADOUTS.keys()[index]
+		build_hint.text = localize(Catalog.LOADOUTS[selected_loadout].hint))
+	button(boot, "NEW RUN    →", func(): run.start(Crypto.new().generate_random_bytes(8).hex_encode(), selected_loadout), false, true).custom_minimum_size.y = 48
 	tag(boot, "OR REPLAY A SEED")
 	var seed_row := row(boot)
 	var seed_input := LineEdit.new()
@@ -266,12 +293,12 @@ func menu_screen() -> void:
 	seed_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	seed_input.add_theme_font_override("font", mono)
 	seed_row.add_child(seed_input)
-	seed_input.text_submitted.connect(func(value): run.start(value))
-	button(seed_row, "BOOT →", func(): run.start(seed_input.text))
+	seed_input.text_submitted.connect(func(value): run.start(value, selected_loadout))
+	button(seed_row, "BOOT →", func(): run.start(seed_input.text, selected_loadout))
 	var art := panel(layout, Color("dfe9d9"), Color("dfe9d9"), 30)
 	art.get_parent().size_flags_stretch_ratio = 0.92
 	tag(art, "PLAYER_PROCESS  /  BEE PROGRAMMER", Color("456754"))
-	portrait(art, "player", 330)
+	portrait(art, "player", 260)
 	label(art, "Every bug has an address.", 28, INK)
 	label(art, "Build your deck. Break the rules.\nFind your way out of the Desktop.", 20, Color("486454"))
 	spacer(content, 8)
@@ -285,20 +312,20 @@ func menu_screen() -> void:
 func map_screen() -> void:
 	var heading := row(content)
 	var copy := column(heading)
-	label(copy, "Choose a system path.", 36)
-	label(copy, "One step deeper into the Desktop. Pick an open process to continue.", 18, MUTED)
+	label(copy, "Choose a system path.", 30)
+	label(copy, "One step deeper into the Desktop. Pick an open process to continue.", 16, MUTED)
 	tag(heading, "%02d BATTLES WON  /  %02d BUG TRIGGERS" % [run.battles_won, run.bugs_triggered], HONEY)
-	var board_frame := panel(content, Color("14232b"))
+	var board_frame := panel(content, Color("14232b"), LINE, 12)
 	tag(board_frame, "FILE EXPLORER   /   C:\\Desktop\\Act_1", MINT)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size.y = 438
+	var board_height: int = ROUTE_BOARD.BOARD_HEIGHT_WITH_SECRET if run.flags.secretUnlocked else ROUTE_BOARD.BOARD_HEIGHT
+	scroll.custom_minimum_size.y = board_height
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	board_frame.add_child(scroll)
 	var board := Control.new()
 	board.set_script(ROUTE_BOARD)
-	board.custom_minimum_size = Vector2(2464, 420)
+	board.custom_minimum_size = Vector2(ROUTE_BOARD.BOARD_WIDTH, board_height)
 	board.locations = run.map.filter(func(node): return node.kind != "secret" or run.flags.secretUnlocked)
-	if run.flags.secretUnlocked: board.custom_minimum_size.y = 570
 	board.current_tier = run.tier
 	board.visited = run.completed
 	scroll.add_child(board)
@@ -307,52 +334,65 @@ func map_screen() -> void:
 		var passed: bool = node.id in run.completed
 		var tone := HONEY if unlocked else (MINT if passed else LINE)
 		var control := button(board, "", run.enter.bind(node.id), not unlocked)
-		control.position = board.point(node) - Vector2(92, 70)
-		control.size = Vector2(184, 140)
-		control.tooltip_text = localize(node.path)
+		control.position = board.point(node) - ROUTE_BOARD.NODE_OFFSET
+		control.size = ROUTE_BOARD.NODE_SIZE
+		control.tooltip_text = node.path + "\n" + localize(ROUTE_DETAILS.tooltip_text(node, unlocked, passed))
 		control.add_theme_stylebox_override("normal", box(Color("20323a"), tone))
 		control.add_theme_stylebox_override("disabled", box(SURFACE, tone))
 		var body := VBoxContainer.new()
-		body.position = Vector2(14, 12)
-		body.size = Vector2(156, 116)
+		body.position = Vector2(10, 6)
+		body.size = ROUTE_BOARD.NODE_SIZE - Vector2(20, 12)
+		body.add_theme_constant_override("separation", 2)
 		body.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		control.add_child(body)
 		var kind_color := CORAL if node.kind in ["boss", "elite"] else (MINT if node.kind in ["event", "secret"] else MUTED)
-		tag(body, node.kind.to_upper() + ("  ✓" if passed else ""), kind_color)
-		label(body, node.label, 21, TEXT if unlocked or passed else MUTED)
-		tag(body, "OPEN →" if unlocked else ("COMPLETED" if passed else "LOCKED"), tone if unlocked or passed else MUTED)
+		label(body, ROUTE_DETAILS.kind_text(node) + ("  ✓" if passed else ""), 12, kind_color)
+		var node_title := label(body, ROUTE_DETAILS.title_text(node), 17, TEXT if unlocked or passed else MUTED)
+		node_title.custom_minimum_size.y = 24
+		node_title.max_lines_visible = 1
+		node_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		var trait_label := label(body, ROUTE_DETAILS.trait_text(node), 13, MUTED)
+		trait_label.custom_minimum_size.y = 34
+		label(body, ROUTE_DETAILS.status_text(unlocked, passed), 12, tone if unlocked or passed else MUTED)
 		for child in body.get_children(): child.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for tier in range(11):
 		var number := tag(board, "PATH %02d" % (tier + 1), HONEY if tier == run.tier else MUTED)
-		number.position = Vector2(56 + tier * 224, 365)
+		number.position = Vector2(24 + tier * ROUTE_BOARD.TIER_WIDTH, ROUTE_BOARD.TIER_LABEL_Y_WITH_SECRET if run.flags.secretUnlocked else ROUTE_BOARD.TIER_LABEL_Y)
 		number.size.x = 150
-	scroll.set_deferred("scroll_horizontal", maxi(0, run.tier * 224 - 224))
+	scroll.set_deferred("scroll_horizontal", maxi(0, run.tier * ROUTE_BOARD.TIER_WIDTH - ROUTE_BOARD.TIER_WIDTH))
 	var info := row(content, 18)
-	var notes := panel(info)
+	var notes := panel(info, SURFACE, LINE, 12)
+	notes.add_theme_constant_override("separation", 4)
 	tag(notes, "YOUR NEXT MOVE", HONEY)
-	label(notes, "Follow an open route above.", 24)
-	label(notes, "Elite processes hit harder. Events can repair your system or change your deck.", 18, MUTED)
-	var build := panel(info)
-	tag(build, "CURRENT BUILD", MINT)
-	label(build, "%d commands installed" % run.cards.size(), 24)
-	label(build, "Same seed + same decisions = same run.", 18, MUTED)
+	label(notes, "Follow an open route above.", 18)
+	var available: Array = run.map.filter(func(node): return node.tier == run.tier and node.has("enemy"))
+	var matching := available.size() > 1 and available.all(func(node): return node.enemy == available[0].enemy)
+	label(notes, "Matching encounters have the same rules; either route advances." if matching else "Elite processes hit harder. Events can repair your system or change your deck.", 14, MUTED)
+	var build := panel(info, SURFACE, LINE, 12)
+	build.add_theme_constant_override("separation", 4)
+	tag(build, route_notice if not route_notice.is_empty() else "CURRENT BUILD", MINT)
+	label(build, localize(Catalog.LOADOUTS[run.loadout_key].name) + " · " + localize("%d commands installed" % run.cards.size()), 18)
+	label(build, "Same seed + build + decisions = same run.", 14, MUTED)
 	if run.flags.daemonDraw or run.flags.printerDebt: tag(build, "BACKGROUND PROCESS PENDING", CORAL)
 
 func portrait(parent: Node, key: String, height := 140) -> TextureRect:
 	var sheet: Texture2D = load("res://assets/bee-rewards.png" if key == "player" else "res://assets/bugbound-characters.png")
 	var index: int = ["player", "folder", "cursor", "trash", "frozen", "memoryHog", "antivirus"].find(key)
+	if key != "player" and Catalog.data.enemies[key].has("artSlot"):
+		sheet = load("res://assets/variety-icons.png")
+		index = Catalog.data.enemies[key].artSlot
 	var atlas := AtlasTexture.new()
 	atlas.atlas = sheet
 	var cell := Vector2(sheet.get_width() / 4.0, sheet.get_height() / 2.0)
 	atlas.region = Rect2(Vector2(index % 4, int(index / 4.0)) * cell, cell)
-	var view := TextureRect.new()
-	view.texture = atlas
+	var view: TextureRect = BEE_PORTRAIT.new() if key == "player" else TextureRect.new()
+	if key != "player": view.texture = atlas
 	view.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	view.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	view.custom_minimum_size = Vector2(height, height)
 	var shader_material := ShaderMaterial.new()
 	shader_material.shader = PAPER_SHADER
-	view.material = shader_material
+	if key != "player": view.material = shader_material
 	view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(view)
 	return view
@@ -374,7 +414,7 @@ func battle_screen() -> void:
 	var b := run.battle
 	var enemy: Dictionary = Catalog.data.enemies[b.enemy_key]
 	var compact := get_viewport_rect().size.y < 800
-	if compact: content.add_theme_constant_override("separation", 8)
+	if compact: content.add_theme_constant_override("separation", 6)
 	var stage := row(content, 16)
 	var arena := panel(stage, Color("203337"), Color("415653"), 12 if compact else 16)
 	if compact: arena.add_theme_constant_override("separation", 8)
@@ -388,7 +428,13 @@ func battle_screen() -> void:
 	var enemy_side := column(fighters)
 	for side in [player, enemy_side]: side.add_theme_constant_override("separation", 8)
 	var player_row := row(player)
-	combat_feedback.player = portrait(player_row, "player", 120 if compact else 180)
+	# Artwork frames change inside a fixed slot without moving the battle layout.
+	var player_slot := Control.new()
+	player_slot.custom_minimum_size = Vector2.ONE * (120 if compact else 180)
+	player_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	player_row.add_child(player_slot)
+	combat_feedback.player = portrait(player_slot, "player", int(player_slot.custom_minimum_size.x))
+	combat_feedback.player.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var player_stats := column(player_row)
 	player_stats.alignment = BoxContainer.ALIGNMENT_CENTER
 	label(player_stats, "Bee Programmer", 22)
@@ -398,14 +444,24 @@ func battle_screen() -> void:
 	combat_feedback.enemy = portrait(enemy_row, b.enemy_key, 120 if compact else 180)
 	var enemy_stats := column(enemy_row)
 	enemy_stats.alignment = BoxContainer.ALIGNMENT_CENTER
-	label(enemy_stats, enemy.name, 22)
+	label(enemy_stats, enemy.name, 22).tooltip_text = localize(enemy.feature)
 	health(enemy_stats, b.enemy_hp, enemy.hp, CORAL)
 	tag(enemy_stats, "%d BLOCK  ·  +%d STR" % [b.enemy_shield, b.strength], CORAL)
-	label(player, enemy.feature, 15, MUTED)
+	if run.battles_won == 0 and not guidance_dismissed:
+		var lesson_row := row(player, 6)
+		var lesson := label(lesson_row, bug_lesson if not bug_lesson.is_empty() else "Spend Energy on cards. Block reduces the next hit.\nMarked cards trigger the bug: gain its reward and pay its risk.", 14, HONEY)
+		lesson.name = "FirstBattleGuide"
+		button(lesson_row, "×", dismiss_guidance).tooltip_text = localize("Dismiss guidance")
+	else:
+		label(player, enemy.feature, 15, MUTED)
 	var intent := panel(enemy_side, Color("352c2b"), Color("85594d"), 8)
 	intent.add_theme_constant_override("separation", 2)
 	label(intent, "ENEMY INTENT  ·  %d DAMAGE" % b.intent_damage(), 18, CORAL)
 	label(intent, b.intent.label + ("  ·  +%d BLOCK" % b.intent.block if b.intent.block else ""), 15)
+	var incoming := label(intent, localize("After Block: %d damage") % b.incoming_damage(), 15, MINT if b.incoming_damage() == 0 else CORAL)
+	if b.incoming_damage() >= b.hp: incoming.text += " · " + localize("LETHAL")
+	incoming.name = "IncomingDamage"
+	incoming.tooltip_text = localize("If you end your turn now. Block resets after the enemy acts.")
 	var bug_panel := panel(stage, Color("18282b"), LINE, 14)
 	bug_panel.name = "MonitorBody"
 	combat_feedback.monitor = bug_panel.get_parent()
@@ -413,7 +469,7 @@ func battle_screen() -> void:
 	bug_panel.add_theme_constant_override("separation", 6)
 	bug_panel.get_parent().custom_minimum_size.x = 320
 	var bug: Dictionary = Catalog.data.bugs[b.bug]
-	tag(bug_panel, "BUG MONITOR", HONEY)
+	var monitor_heading := tag(bug_panel, "BUG MONITOR", HONEY)
 	label(bug_panel, bug.name, 22)
 	for rule in [["TRIGGER", bug.trigger, TEXT], ["REWARD", bug.reward, MINT], ["RISK", bug.risk, CORAL]]:
 		var line := column(bug_panel)
@@ -435,7 +491,10 @@ func battle_screen() -> void:
 	if b.bee.pollen: states.append("Pollen: " + ("collect next effect" if b.bee.pollen == 2 else "pass to next card"))
 	if b.bee.guard: states.append("Retaliation %d" % b.bee.guard)
 	if b.debt: states.append("NEXT TURN -%d ENERGY" % b.debt)
-	label(bee_bar, "  ·  ".join(states) if not states.is_empty() else "First Attack each turn: +1 Nectar · kept this battle", 15, MUTED)
+	var nectar_help := label(bee_bar, "  ·  ".join(states) if not states.is_empty() else "First Attack: +1 Nectar · grow it or spend it", 15, MUTED)
+	var nectar_explanation := localize("Nectar lasts this battle. It strengthens Nectar Lance and Wax Wall. Swarm Loop spends it for damage; Royal Jelly spends 2 to reduce another card's cost.")
+	nectar.tooltip_text = nectar_explanation
+	nectar_help.tooltip_text = nectar_explanation
 	var tools := row(content, 16)
 	var energy := panel(tools, Color("24473f"), MINT, 8)
 	energy.get_parent().size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -453,7 +512,7 @@ func battle_screen() -> void:
 	button(tools, "Battle log", show_log)
 	button(tools, "END TURN  ↵", run.end_turn, b.popup_open or not b.choice.is_empty(), true)
 	var hand_scroll := ScrollContainer.new()
-	hand_scroll.custom_minimum_size.y = 282 if compact else 326
+	hand_scroll.custom_minimum_size.y = 266 if compact else 326
 	hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	content.add_child(hand_scroll)
 	var hand_margin := MarginContainer.new()
@@ -469,9 +528,31 @@ func battle_screen() -> void:
 	for card in b.hand:
 		var view = card_view(cards, card, play_card.bind(int(card.id)), not b.can_play(card))
 		combat_feedback.cards[int(card.id)] = view
-		view.custom_minimum_size = Vector2(222, 260 if compact else 302)
+		view.custom_minimum_size = Vector2(222, 244 if compact else 302)
 		view.art_height = 94.0 if compact else 126.0
 		view.get_node("Margin/Body/ArtFrame").custom_minimum_size.y = view.art_height
+		if b.can_play(card):
+			var preview := b.preview_card(card)
+			var details := ""
+			if preview.nectar_spent > 0:
+				details = localize("Spend %d Nectar") % preview.nectar_spent
+			if card.key == "swarm" or card.has("scaling"):
+				var current_effect: String = localize("Now: %d Block") % preview.block if card.get("scaling", "") == "nectar_block" else localize("Now: %d damage") % preview.damage
+				details += "\n" + current_effect
+				view.get_node("Margin/Body/Effect").text += "\n" + current_effect
+			if preview.triggers_bug:
+				var notice: Label = view.get_node("Margin/Body/LockNotice")
+				notice.text = localize("TRIGGERS BUG")
+				notice.add_theme_color_override("font_color", Color("775716"))
+				notice.show()
+				details += "\n" + localize("TRIGGERS BUG") + ": " + localize(bug.name) + "\n" + localize("REWARD") + ": " + localize(bug.reward) + "\n" + localize("RISK") + ": " + localize(bug.risk)
+				var highlight := func(): monitor_heading.text = localize("THIS CARD TRIGGERS THE BUG")
+				var unhighlight := func(): monitor_heading.text = localize("BUG MONITOR")
+				view.mouse_entered.connect(highlight)
+				view.focus_entered.connect(highlight)
+				view.mouse_exited.connect(unhighlight)
+				view.focus_exited.connect(unhighlight)
+			view.tooltip_text += "\n" + details.strip_edges()
 		if not b.can_play(card):
 			var reason := "NOT ENOUGH ENERGY" if card.cost > b.energy else "REQUIREMENTS NOT MET"
 			if b.popup_open or not b.choice.is_empty(): reason = "RESOLVE CHOICE FIRST"
@@ -494,6 +575,8 @@ func play_card(id: int) -> void:
 	for card in run.battle.hand:
 		if card.id == id and run.battle.can_play(card):
 			feedback = "> " + card.name + "  /  " + Catalog.describe(card)
+			if run.battle.preview_card(card).triggers_bug:
+				bug_lesson = "Bug triggered! Reward and risk applied.\nThe monitor now shows a new bug."
 			combat_feedback.prepare_card(id, card)
 			break
 	run.play(id)
@@ -525,10 +608,17 @@ func reward_screen() -> void:
 	cards.alignment = BoxContainer.ALIGNMENT_CENTER
 	for i in range(run.rewards.size()):
 		var choice := column(cards, false)
-		card_view(choice, run.rewards[i], run.reward.bind(i))
-		button(choice, "INSTALL →", run.reward.bind(i), false, true)
+		var style := Catalog.reward_style(run.rewards[i].key)
+		tag(choice, Catalog.LOADOUTS[style].name, HONEY).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		card_view(choice, run.rewards[i], install_reward.bind(i))
+		button(choice, "INSTALL →", install_reward.bind(i), false, true)
 	spacer(body, 12)
-	button(body, "Skip installation", run.reward.bind(-1))
+	button(body, "Skip installation", install_reward.bind(-1))
+
+func install_reward(index: int) -> void:
+	if run.screen != "reward" or index < -1 or index >= run.rewards.size(): return
+	route_notice = "Installed: " + run.rewards[index].name if index >= 0 else "Deck unchanged."
+	run.reward(index)
 
 func event_screen() -> void:
 	spacer(content, 30)
@@ -618,6 +708,7 @@ func show_log() -> void:
 	for entry in run.battle.log: label(body, entry, 17, MUTED)
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if not content.visible: return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
 			if is_instance_valid(overlay): render()

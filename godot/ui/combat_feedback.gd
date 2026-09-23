@@ -17,6 +17,9 @@ var _flight: Control
 var _target := Vector2.ZERO
 var _pending := {}
 var _screen_name := ""
+var _bee_pose := Vector2(0.0, -1.0)
+var _transition_backdrop: Control
+var _presenting_result := false
 
 func prepare_card(id: int, data: Dictionary) -> void:
 	if not cards.has(id) or not is_instance_valid(cards[id]): return
@@ -24,14 +27,29 @@ func prepare_card(id: int, data: Dictionary) -> void:
 	_flight = feel.snapshot(cards[id])
 	var target := enemy if data.get("kind", "") == "attack" else player
 	_target = target.get_global_rect().get_center() if is_instance_valid(target) else screen.size * 0.5
+	if data.get("kind", "") == "attack" and is_instance_valid(player): player.attack()
 
 func before_render(run: RunState) -> void:
 	_pending = {}
+	if is_instance_valid(player): _bee_pose = Vector2(player.idle_time, player.attack_time)
 	var resolved := _battle != null and run.battle == null and (_battle.enemy_hp <= 0 or _battle.hp <= 0)
+	if _presenting_result and not resolved:
+		_epoch += 1
+		feel.clear()
+		_presenting_result = false
+	if resolved and is_instance_valid(screen.content):
+		_presenting_result = true
+		# Retain the arena until its effects finish; rewards never sit underneath them.
+		var hide_enemy := _battle.enemy_hp <= 0 and is_instance_valid(enemy)
+		if hide_enemy: enemy.hide()
+		_transition_backdrop = feel.snapshot(screen.content)
+		feel.effects_root.move_child(_transition_backdrop, 0)
+		if hide_enemy: enemy.show()
 	if (_battle != run.battle or run.screen != _screen_name) and not resolved:
 		_epoch += 1
 		feel.clear()
 		_flight = null
+		_bee_pose = Vector2(0.0, -1.0)
 	if _battle != null and (run.battle == _battle or resolved):
 		_pending = {
 			"epoch": _epoch, "battle_id": _battle.get_instance_id(),
@@ -67,6 +85,7 @@ func before_render(run: RunState) -> void:
 	cards.clear()
 
 func after_render(run: RunState) -> void:
+	if is_instance_valid(player): player.restore_pose(_bee_pose)
 	_screen_name = run.screen
 	_battle = run.battle
 	if _battle != null:
@@ -80,6 +99,22 @@ func after_render(run: RunState) -> void:
 		_flight = null
 	elif not batch.is_empty():
 		_present.call_deferred(batch)
+	if is_instance_valid(_transition_backdrop):
+		_reveal_after_effects(screen.content, _transition_backdrop)
+		_transition_backdrop = null
+
+func _reveal_after_effects(next_content: Control, backdrop: Control) -> void:
+	next_content.hide()
+	# _present defers two frames for layout; let every effect start first.
+	for i in range(4): await get_tree().process_frame
+	while is_instance_valid(backdrop) and feel.effects_root.get_child_count() > 1:
+		await get_tree().process_frame
+	if is_instance_valid(backdrop): backdrop.queue_free()
+	if is_instance_valid(next_content):
+		_presenting_result = false
+		next_content.show()
+		next_content.modulate.a = 0
+		next_content.create_tween().tween_property(next_content, "modulate:a", 1.0, maxf(0.001, feel.settings.screen_enter_duration))
 
 func _present(batch: Dictionary) -> void:
 	# Containers finish laying out new portraits before we record their rest pose.

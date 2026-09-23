@@ -58,7 +58,7 @@ func configure(card: Dictionary, localize: Callable, action: Callable, locked: b
 	if not pressed.is_connected(action): pressed.connect(action)
 	tooltip_text = localize.call(Catalog.describe(card))
 	var kind := str(card.get("kind", "skill"))
-	var accent := AMBER if card.get("key", "") in Catalog.BEE else _accent_for(kind)
+	var accent := AMBER if card.get("key", "") in Catalog.BEE or card.has("artSlot") else _accent_for(kind)
 	$Margin/Body/Top/Cost/Value.text = str(int(card.get("cost", 0)))
 	$Margin/Body/Top/Type.text = localize.call(kind.to_upper())
 	$Margin/Body/Top/Type.add_theme_color_override("font_color", accent.darkened(0.52))
@@ -82,7 +82,8 @@ func _set_art(card: Dictionary) -> void:
 		return
 	var bee := index >= 12
 	if bee: index -= 12
-	var sheet: Texture2D = load("res://assets/bee-rewards.png" if bee else "res://assets/bugbound-icons.png")
+	if card.has("artSlot"): index = card.artSlot
+	var sheet: Texture2D = load("res://assets/variety-icons.png" if card.has("artSlot") else ("res://assets/bee-rewards.png" if bee else "res://assets/bugbound-icons.png"))
 	var atlas := AtlasTexture.new()
 	atlas.atlas = sheet
 	var cell := Vector2(sheet.get_width() / 4.0, sheet.get_height() / (2.0 if bee else 3.0))

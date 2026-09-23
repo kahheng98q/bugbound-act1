@@ -185,6 +185,72 @@
       "code": "upgrade(card)",
       "description": "Spend 2 Nectar: choose a card in hand costing 1+. Reduce its cost by 1 this battle. Exhaust.",
       "exhausted": true
+    },
+    {
+      "key": "forage",
+      "kind": "skill",
+      "cost": 1,
+      "description": "Gain 4 Block and 2 Nectar.",
+      "name": "Forager",
+      "nectarGain": 2,
+      "artSlot": 0,
+      "code": "gather(nectar)",
+      "block": 4
+    },
+    {
+      "damage": 5,
+      "key": "lance",
+      "kind": "attack",
+      "cost": 1,
+      "scaling": "nectar_damage",
+      "name": "Nectar Lance",
+      "artSlot": 1,
+      "code": "sting(nectar)",
+      "description": "Deal 5 damage, plus 2 per Nectar. Keep your Nectar."
+    },
+    {
+      "key": "wax",
+      "kind": "skill",
+      "cost": 1,
+      "scaling": "nectar_block",
+      "name": "Wax Wall",
+      "artSlot": 2,
+      "code": "build(honeycomb)",
+      "block": 4,
+      "description": "Gain 4 Block, plus 2 per Nectar. Keep your Nectar."
+    },
+    {
+      "damage": 3,
+      "key": "bash",
+      "kind": "attack",
+      "cost": 1,
+      "scaling": "block_damage",
+      "name": "Shield Bash",
+      "artSlot": 3,
+      "code": "block.toDamage()",
+      "description": "Deal 3 damage, plus your current Block (up to 12 extra). Keep your Block."
+    },
+    {
+      "key": "patch",
+      "kind": "skill",
+      "cost": 0,
+      "artSlot": 4,
+      "name": "Quick Patch",
+      "exhausted": true,
+      "code": "patch --instant",
+      "block": 3,
+      "description": "Gain 3 Block. Exhaust."
+    },
+    {
+      "damage": 4,
+      "key": "thread",
+      "kind": "attack",
+      "cost": 1,
+      "scaling": "attacks_damage",
+      "name": "Threaded Strike",
+      "artSlot": 5,
+      "code": "chain(attack)",
+      "description": "Deal 4 damage, plus 3 per Attack already played this turn."
     }
   ],
   "enemies": {
@@ -235,6 +301,22 @@
       "hp": 92,
       "kind": "boss",
       "feature": "Bug triggers increase Threat; ordinary attacks and defense do not."
+    },
+    "sentinel": {
+      "artSlot": 6,
+      "process": "firewall.sys",
+      "hp": 42,
+      "feature": "Alternates defense and attack. Each Skill removes 2 enemy Block before resolving.",
+      "name": "Firewall Sentinel",
+      "kind": "battle"
+    },
+    "wasp": {
+      "artSlot": 7,
+      "process": "scheduler.exe",
+      "hp": 38,
+      "feature": "Attacks for 4 damage, then 4, then 14. The three-turn cycle repeats.",
+      "name": "Clockwork Wasp",
+      "kind": "battle"
     }
   },
   "bugs": {

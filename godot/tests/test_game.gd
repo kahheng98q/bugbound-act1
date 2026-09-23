@@ -15,6 +15,13 @@ func map_signature(nodes: Array) -> String:
 		result += "%s:%s:%s:%s|" % [node.id, node.kind, node.get("enemy", node.get("event", "")), node.get("anomaly", false)]
 	return result
 
+func map_topology_signature(nodes: Array) -> String:
+	var result := ""
+	for node in nodes:
+		# Encounters after tier 3 may expand, but route kind, event/anomaly rolls, and node ids stay seeded.
+		result += "%s:%s:%s|" % [node.id, node.kind, node.get("event", ""), node.get("anomaly", false)]
+	return result
+
 func _initialize() -> void:
 	seed_parity()
 	combat_rules()
@@ -31,8 +38,13 @@ func seed_parity() -> void:
 		for expected in fixture.values: check(abs(rng.next() - expected) < 0.000000001, "JavaScript RNG parity: " + fixture.seed)
 		rng = SeededRng.new(fixture.seed)
 		var map := MapGenerator.generate(rng)
-		check(map_signature(map) == map_signature(fixture.map.nodes), "JavaScript map parity: " + fixture.seed)
+		var legacy_early := map.filter(func(node): return node.tier < 3)
+		var generated_early := fixture.map.nodes.filter(func(node): return node.tier < 3)
+		check(map_signature(legacy_early) == map_signature(generated_early), "JavaScript early-map identity parity: " + fixture.seed)
+		check(map_topology_signature(map) == map_topology_signature(fixture.map.nodes), "JavaScript map topology parity after encounter expansion: " + fixture.seed)
 		check(rng.calls == fixture.map.rng.calls and rng.state == fixture.map.rng.state, "Map RNG cursor parity")
+		var replay_rng := SeededRng.new(fixture.seed)
+		check(map_signature(map) == map_signature(MapGenerator.generate(replay_rng)), "Known seeded encounter map is reproducible: " + fixture.seed)
 
 func fresh(enemy := "folder") -> RunState:
 	var run := RunState.new()

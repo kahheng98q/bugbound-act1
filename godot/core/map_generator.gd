@@ -5,7 +5,9 @@ const BATTLES := [
 	["folder", "Documents", "C:\\Desktop\\Documents"],
 	["cursor", "Pointer Cache", "C:\\Desktop\\System32"],
 	["trash", "Recycle Bin", "C:\\Desktop\\$Recycle.Bin"],
-	["frozen", "Frozen App", "C:\\Desktop\\Programs"]]
+	["frozen", "Frozen App", "C:\\Desktop\\Programs"],
+	["sentinel", "Firewall Gate", "C:\\Desktop\\Firewall"],
+	["wasp", "Clock Tower", "C:\\Desktop\\Scheduler"]]
 const EVENTS := [
 	["update", "System Update", "C:\\Desktop\\Updates"],
 	["unknownExe", "Unknown.exe", "C:\\Desktop\\Downloads"],

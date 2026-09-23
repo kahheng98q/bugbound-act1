@@ -20,6 +20,13 @@ func check(value: bool, message: String) -> void:
 
 func snapshot(name_: String) -> void:
 	await settle()
+	if name_ == "reward":
+		for i in range(180):
+			if game.content.visible: break
+			await create_timer(0.01).timeout
+		await settle()
+		check(game.content.visible, "Reward appears after combat effects finish")
+		check(game.game_feel.effects_root.get_child_count() == 0, "Reward content has no overlapping combat effects")
 	if capture:
 		await RenderingServer.frame_post_draw
 		var target := ProjectSettings.globalize_path("res://../work/ui-" + name_ + ".png")
@@ -74,6 +81,44 @@ func combat_matrix_capture(dimensions: Vector2i, locale: String) -> void:
 	check(root.size == dimensions, "Capture viewport is exact: %s" % dimensions)
 	check_combat_matrix_layout()
 	await snapshot("combat-%d-%s" % [dimensions.x, locale])
+
+func experience_flow() -> void:
+	for dimensions in [Vector2i(1280, 720), Vector2i(1440, 900)]:
+		for locale in ["en", "zh"]:
+			root.size = dimensions
+			await settle()
+			game.language = locale
+			game.build_matcher()
+			game.run.start("BUG-404-LOL")
+			await settle()
+			check(game.content.get_global_rect().end.y <= dimensions.y - 24, "Map and route context fit viewport: %s %s" % [dimensions, locale])
+			for route in buttons(game).filter(func(item): return item.tooltip_text.begins_with("C:")):
+				var body: Control = route.get_child(0)
+				check(body.get_child(1).size.y > 0 and body.get_child(2).size.y > 0, "Route title and trait have visible space")
+				check(body.get_child(3).get_global_rect().end.y <= route.get_global_rect().end.y, "Route details fit node")
+			await snapshot("map-%d-%s" % [dimensions.x, locale])
+	game.language = "en"
+	game.build_matcher()
+	game.guidance_dismissed = false
+	game.run.enter("t0l0")
+	game.run.battle.bug = "firewall"
+	game.render()
+	await settle()
+	check(game.find_child("FirstBattleGuide", true, false) != null, "First battle has contextual guidance")
+	var marked := buttons(game).filter(func(item): return item.get_script() == load("res://ui/card_view.gd") and item.get_node("Margin/Body/LockNotice").text == "TRIGGERS BUG")
+	check(not marked.is_empty(), "Playable trigger cards are visibly marked")
+	if not marked.is_empty():
+		marked[0].grab_focus()
+		check(marked[0].tooltip_text.contains("REWARD") and marked[0].tooltip_text.contains("RISK"), "Trigger preview explains reward and risk")
+		await snapshot("experience-trigger")
+		await click_control(marked[0])
+		await settle()
+		check(game.bug_lesson.contains("Reward and risk applied"), "First trigger is acknowledged")
+		var incoming: Label = game.find_child("IncomingDamage", true, false)
+		check(incoming.text == "After Block: %d damage" % game.run.battle.incoming_damage(), "Incoming preview updates after playing Block")
+	await press_text("×")
+	check(game.find_child("FirstBattleGuide", true, false) == null, "Guidance can be dismissed")
+	game.run.abandon()
 
 func combat_states_capture() -> void:
 	await combat_matrix_capture(Vector2i(1280, 720), "en")
@@ -152,6 +197,13 @@ func press_text(part: String) -> void:
 	check(false, "Missing button: " + part)
 
 func _run() -> void:
+	if "--experience-only" in OS.get_cmdline_user_args():
+		game = load("res://scenes/main.tscn").instantiate()
+		root.add_child(game)
+		await experience_flow()
+		print("BUGBOUND EXPERIENCE UI: %d failures" % failures)
+		quit(1 if failures else 0)
+		return
 	if "--combat-only" in OS.get_cmdline_user_args():
 		game = load("res://scenes/main.tscn").instantiate()
 		root.add_child(game)
@@ -194,6 +246,7 @@ func _run() -> void:
 	check(not game.run.battle.popup_open, "Popup choice resolves")
 	game.run.battle.enemy_hp = 0
 	game.run.settle()
+	check(not game.content.visible, "Reward content waits for defeat presentation")
 	await snapshot("reward")
 	await press_text("INSTALL →")
 	check(game.run.screen == "map" and game.run.cards.size() == 11, "Reward installs and returns to map")
@@ -223,6 +276,7 @@ func _run() -> void:
 	game.run.abandon()
 	await combat_matrix_capture(Vector2i(1440, 900), "zh")
 	await combat_states_capture()
+	await experience_flow()
 	game.run.abandon()
 	game.queue_free()
 	await process_frame
