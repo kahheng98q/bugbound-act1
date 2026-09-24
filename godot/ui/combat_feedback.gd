@@ -20,6 +20,9 @@ var _screen_name := ""
 var _bee_pose := Vector2(0.0, -1.0)
 var _transition_backdrop: Control
 var _presenting_result := false
+var _enemy_attack_visual: Control
+var _enemy_attack_target := Vector2.ZERO
+var _enemy_attack_armed := false
 
 func prepare_card(id: int, data: Dictionary) -> void:
 	if not cards.has(id) or not is_instance_valid(cards[id]): return
@@ -28,6 +31,14 @@ func prepare_card(id: int, data: Dictionary) -> void:
 	var target := enemy if data.get("kind", "") == "attack" else player
 	_target = target.get_global_rect().get_center() if is_instance_valid(target) else screen.size * 0.5
 	if data.get("kind", "") == "attack" and is_instance_valid(player): player.attack()
+
+func prepare_enemy_attack() -> void:
+	if not is_instance_valid(enemy) or not is_instance_valid(player): return
+	if enemy.size.x <= 0 or player.size.x <= 0: return
+	_enemy_attack_visual = feel.snapshot(enemy)
+	_enemy_attack_target = player.get_global_rect().get_center()
+	_enemy_attack_armed = is_instance_valid(_enemy_attack_visual)
+
 
 func before_render(run: RunState) -> void:
 	_pending = {}
@@ -56,6 +67,9 @@ func before_render(run: RunState) -> void:
 			"damage": maxi(0, _enemy_hp - _battle.enemy_hp),
 			"player_damage": maxi(0, _player_hp - _battle.hp),
 			"dead": _enemy_hp > 0 and _battle.enemy_hp <= 0,
+			"enemy_attack": _enemy_attack_armed,
+			"enemy_attack_visual": _enemy_attack_visual,
+			"enemy_attack_target": _enemy_attack_target,
 		}
 		if _pending.dead and is_instance_valid(enemy):
 			_pending.actor = feel.snapshot(enemy)
@@ -77,6 +91,8 @@ func before_render(run: RunState) -> void:
 			icon.position = progress.get_global_rect().get_center() - Vector2(22, 22)
 			_pending.icon.hide()
 			copy.hide()
+	_enemy_attack_armed = false
+	_enemy_attack_visual = null
 	# The old Controls are about to be freed by the UI rebuild.
 	enemy = null
 	player = null
@@ -129,7 +145,9 @@ func _present(batch: Dictionary) -> void:
 			if is_instance_valid(actor): feel.enemy_death(actor, actor.queue_free))
 	elif batch.damage > 0 and same_battle and is_instance_valid(enemy):
 		feel.enemy_damage(enemy, batch.damage)
-	if batch.player_damage > 0:
+	if batch.get("enemy_attack", false) and is_instance_valid(batch.get("enemy_attack_visual")):
+		feel.enemy_attack(batch.enemy_attack_visual, batch.enemy_attack_target, batch.player_damage, screen, player)
+	elif batch.player_damage > 0:
 		feel.screen_shake(screen)
 	if is_instance_valid(batch.get("monitor")):
 		var copy: Control = batch.monitor
