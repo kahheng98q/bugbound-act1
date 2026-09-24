@@ -510,7 +510,7 @@ func battle_screen() -> void:
 	action_hint.tooltip_text = localize(feedback)
 	tag(tools, "HAND %d  ·  DRAW %d  ·  DISCARD %d" % [b.hand.size(), b.deck.size(), b.discard.size()], MUTED).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	button(tools, "Battle log", show_log)
-	button(tools, "END TURN  ↵", run.end_turn, b.popup_open or not b.choice.is_empty(), true)
+	button(tools, "END TURN  ↵", end_turn, b.popup_open or not b.choice.is_empty(), true)
 	var hand_scroll := ScrollContainer.new()
 	hand_scroll.custom_minimum_size.y = 266 if compact else 326
 	hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -569,6 +569,14 @@ func battle_screen() -> void:
 		var dialog := modal(title_text)
 		var choices: Array = b.hand.filter(func(card): return card.cost > 0) if b.choice.kind == "jelly" else b.choice.cards
 		for card in choices: button(dialog, card.name, run.choose.bind(int(card.id)))
+
+func end_turn() -> void:
+	if run.screen != "battle" or run.battle == null: return
+	var battle := run.battle
+	if battle.popup_open or not battle.choice.is_empty() or battle.hp <= 0 or battle.enemy_hp <= 0: return
+	combat_feedback.prepare_enemy_attack()
+	run.end_turn()
+
 
 func play_card(id: int) -> void:
 	if run.screen != "battle" or run.battle == null: return
@@ -713,4 +721,4 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE:
 			if is_instance_valid(overlay): render()
 			elif run.screen != "menu": pause_menu()
-		elif event.keycode == KEY_ENTER and run.screen == "battle" and not is_instance_valid(overlay): run.end_turn()
+		elif event.keycode == KEY_ENTER and run.screen == "battle" and not is_instance_valid(overlay): end_turn()

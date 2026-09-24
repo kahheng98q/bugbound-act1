@@ -21,6 +21,14 @@ extends Resource
 @export var impact_burst_size := 46.0
 @export var damage_knockback := 14.0
 @export var death_squash := 1.12
+@export var enemy_attack_windup_duration := 0.10
+@export var enemy_attack_launch_duration := 0.14
+@export var enemy_attack_recover_duration := 0.18
+@export var enemy_attack_windup_distance := 20.0
+@export var enemy_attack_stop_distance := 44.0
+@export var enemy_attack_scale := 1.08
+@export var enemy_attack_shake_intensity := 11.0
+@export var enemy_attack_flash_duration := 0.11
 
 @export_category("Rewards")
 @export var monitor_duration := 0.38

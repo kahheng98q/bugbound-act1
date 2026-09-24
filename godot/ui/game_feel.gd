@@ -106,6 +106,50 @@ func card_play(card: Control, target_position: Vector2, on_impact: Callable = Ca
 	return tween
 
 
+func enemy_attack(attacker: Control, target_position: Vector2, damage_amount: int, screen_target: Control = null, hit_target: Control = null) -> Tween:
+	if not is_instance_valid(attacker): return null
+	_ensure_layer()
+	_center_pivot(attacker)
+	var origin_position := attacker.position
+	var origin_scale := attacker.scale
+	var origin_rotation := attacker.rotation
+	var attacker_center := attacker.get_global_rect().get_center()
+	var direction := (target_position - attacker_center).normalized()
+	if direction.is_zero_approx(): direction = Vector2.LEFT
+	var windup_position := origin_position - direction * settings.enemy_attack_windup_distance
+	var impact_center := target_position - direction * settings.enemy_attack_stop_distance
+	var tween := _track(create_tween().bind_node(attacker))
+	_flash(attacker, Color(1.55, 0.72, 0.72, 1.0), settings.enemy_attack_flash_duration)
+	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	tween.tween_property(attacker, "position", windup_position, _duration(settings.enemy_attack_windup_duration))
+	tween.parallel().tween_property(attacker, "scale", origin_scale * settings.enemy_attack_scale, _duration(settings.enemy_attack_windup_duration))
+	tween.parallel().tween_property(attacker, "rotation", origin_rotation - direction.y * 0.08, _duration(settings.enemy_attack_windup_duration))
+	tween.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(attacker, "position", _center_target(attacker, impact_center), _duration(settings.enemy_attack_launch_duration))
+	tween.parallel().tween_property(attacker, "scale", origin_scale * 0.94, _duration(settings.enemy_attack_launch_duration))
+	tween.tween_callback(func():
+		_impact_burst(target_position, Color("ff5c6c"))
+		_system_flash(Color("ff5c6c"), settings.enemy_attack_flash_duration)
+		if is_instance_valid(screen_target):
+			screen_shake(screen_target, settings.enemy_attack_shake_intensity, settings.shake_duration)
+		if is_instance_valid(hit_target):
+			_flash(hit_target, Color(1.45, 0.72, 0.72, 1.0), settings.enemy_attack_flash_duration)
+		var message := "-%d" % damage_amount if damage_amount > 0 else "BLOCKED"
+		var popup := _text_popup(message, target_position - Vector2(28, 42))
+		popup.add_theme_font_size_override("font_size", 28)
+		popup.add_theme_color_override("font_color", Color("ff8b94") if damage_amount > 0 else Color("75cbb0"))
+		_popup_motion(popup, settings.damage_popup_duration))
+	tween.tween_interval(_duration(settings.enemy_attack_flash_duration) * 0.45)
+	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(attacker, "position", origin_position, _duration(settings.enemy_attack_recover_duration))
+	tween.parallel().tween_property(attacker, "scale", origin_scale, _duration(settings.enemy_attack_recover_duration))
+	tween.parallel().tween_property(attacker, "rotation", origin_rotation, _duration(settings.enemy_attack_recover_duration))
+	tween.tween_property(attacker, "modulate:a", 0.0, _duration(settings.enemy_attack_recover_duration) * 0.45)
+	tween.tween_callback(func():
+		if is_instance_valid(attacker): attacker.queue_free())
+	return tween
+
+
 func enemy_damage(actor: Control, amount: int, on_finished: Callable = Callable()) -> Tween:
 	if not is_instance_valid(actor): return null
 	_replace_actor_effect(actor)
