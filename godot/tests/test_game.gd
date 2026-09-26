@@ -199,6 +199,8 @@ func spider_rules() -> void:
 	b.play(inject.id)
 	check(enemy_before - b.enemy_hp == 14 and b.web.size() == 1, "Inject consumes one captured Bug for bonus damage")
 	b.energy = 3
+	b.bug = "firewall"
+	b.progress = 0
 	b.web = ["hotPath", "overflow"]
 	enemy_before = b.enemy_hp
 	var overflow := give(b, "stack_overflow")
