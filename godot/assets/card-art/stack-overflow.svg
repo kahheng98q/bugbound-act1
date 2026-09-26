@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="256" viewBox="0 0 512 256">
+<rect width="512" height="256" fill="#f2e7d5"/>
+<g stroke="#f05a4e" stroke-width="8" opacity=".75"><path d="M256 10v42M168 28l22 38M94 84l48 16M418 84l-48 16M344 28l-22 38M96 196l46-20M416 196l-46-20"/></g>
+<g transform="translate(54 70) rotate(-7)"><rect width="186" height="118" rx="10" fill="#18333d" stroke="#102029" stroke-width="7"/><circle cx="18" cy="17" r="5" fill="#ffcf4a"/><circle cx="35" cy="17" r="5" fill="#66d9bf"/><path d="M18 44h126M18 66h90M18 88h138" stroke="#54d4b7" stroke-width="7"/></g>
+<g transform="translate(272 76) rotate(6)"><rect width="184" height="116" rx="10" fill="#1a2c39" stroke="#102029" stroke-width="7"/><path d="M20 34h122M20 58h102M20 82h132" stroke="#f6c04a" stroke-width="7"/></g>
+<g transform="translate(256 132)">
+<circle r="46" fill="#111c2c" stroke="#081018" stroke-width="7"/><circle cy="-44" r="29" fill="#111c2c" stroke="#081018" stroke-width="7"/>
+<g stroke="#081018" stroke-width="8" stroke-linecap="round"><path d="M-32 -10L-72 -34M32 -10L72 -34M-35 8L-80 4M35 8L80 4M-28 32L-70 62M28 32L70 62"/></g>
+<g stroke="#ff4f57" stroke-width="9"><path d="M-18 -56l16 16M-2 -56l-16 16M2 -56l16 16M18 -56L2 -40"/></g>
+<path d="M-18 18Q0 8 18 18" stroke="#ff7a64" stroke-width="7" fill="none"/>
+</g></svg>
