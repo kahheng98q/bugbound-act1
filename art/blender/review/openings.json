@@ -1,0 +1,6 @@
+{
+  "schema": "game-room.opening-schedule.v1",
+  "roomId": "act1-battle-room-01",
+  "primaryArrival": {"openingId": "", "exception": "Non-traversable 2.5D stage. Front and top intentionally open for production camera and lighting; no architectural door, window or implied passage."},
+  "openings": []
+}

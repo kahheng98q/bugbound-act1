@@ -7,9 +7,11 @@ const PAPER_SHADER = preload("res://ui/paper_cutout.gdshader")
 const FEEDBACK = preload("res://ui/combat_feedback.gd")
 const BEE_PORTRAIT = preload("res://ui/bee_portrait.gd")
 const SPIDER_PORTRAIT = preload("res://ui/spider_portrait.gd")
+const SHRINE_BACKDROP = preload("res://ui/shrine_backdrop.gd")
 @export var game_feel_settings: GameFeelSettings = preload("res://ui/default_game_feel.tres")
 var game_feel := GameFeel.new()
 var combat_feedback := FEEDBACK.new()
+var shrine_backdrop := SHRINE_BACKDROP.new()
 const INK := Color("101b22")
 const SURFACE := Color("182830")
 const LINE := Color("30434b")
@@ -52,6 +54,9 @@ func _ready() -> void:
 	combat_feedback.feel = game_feel
 	combat_feedback.screen = self
 	add_child(combat_feedback)
+	shrine_backdrop.name = "ShrineBackdrop"
+	add_child(shrine_backdrop)
+	shrine_backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	run.changed.connect(render)
 	resized.connect(func():
 		queue_redraw()
@@ -221,7 +226,7 @@ func render() -> void:
 	if last_screen != "battle" and run.screen == "battle": bug_lesson = ""
 	if last_screen != "battle" or run.screen != "battle": feedback = ""
 	for child in get_children():
-		if child == game_feel or child == combat_feedback: continue
+		if child == game_feel or child == combat_feedback or child == shrine_backdrop: continue
 		remove_child(child)
 		child.queue_free()
 	overlay = null
@@ -261,6 +266,13 @@ func render() -> void:
 		content.create_tween().tween_property(content, "modulate:a", 1.0, maxf(0.001, game_feel_settings.screen_enter_duration))
 	last_screen = run.screen
 	combat_feedback.after_render(run)
+	# Keep the room behind the retained battle while defeat/reward effects finish.
+	shrine_backdrop.visible = run.screen == "battle" or not content.visible
+	shrine_backdrop.set_process(shrine_backdrop.visible)
+	if run.screen != "battle" and not content.visible:
+		content.visibility_changed.connect(func():
+			shrine_backdrop.hide()
+			shrine_backdrop.set_process(false), CONNECT_ONE_SHOT)
 	if menu_deck_open and run.screen == "menu": starting_deck()
 
 func dismiss_guidance() -> void:
@@ -511,7 +523,7 @@ func battle_screen() -> void:
 	var compact := get_viewport_rect().size.y < 800
 	if compact: content.add_theme_constant_override("separation", 2)
 	var stage := row(content, 16)
-	var arena := panel(stage, Color("203337"), Color("415653"), 9 if compact else 16)
+	var arena := panel(stage, Color(0.035, 0.075, 0.1, 0.68), Color("415e69"), 9 if compact else 16)
 	if compact: arena.add_theme_constant_override("separation", 8)
 	arena.get_parent().size_flags_stretch_ratio = 3.2
 	var title := row(arena)

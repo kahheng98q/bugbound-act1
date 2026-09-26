@@ -1,0 +1,16 @@
+{
+  "room": "Act1_BattleRoom_01",
+  "blender": "5.2.2 LTS",
+  "source": "art/blender/scenes/Act1_BattleRoom_01_Corrupted_Bug_Shrine.blend",
+  "resolution": [
+    1440,
+    900
+  ],
+  "camera": "CAM_Battle with Godot HUD framing target (0, 1, 3.6)",
+  "plates": {
+    "background": "background.png",
+    "midground": "midground.png",
+    "foreground": "foreground.png"
+  },
+  "notes": "Floor belongs to background. Middle/foreground have transparent film and floor shadow catchers. All plates share one camera. Runtime overscans by 4%; motion capped at 5 px."
+}

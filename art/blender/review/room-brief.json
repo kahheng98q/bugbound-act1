@@ -1,0 +1,16 @@
+{
+  "schema": "game-room.room-brief.v1",
+  "roomId": "act1-battle-room-01",
+  "family": "gameplay-room",
+  "purpose": "Original BUGBOUND fixed-camera art prototype for a turn-based card battle.",
+  "runtimeSurface": "Godot 2D battle backdrop with three rendered plates and bounded pointer parallax",
+  "boundsMeters": [30, 22, 8],
+  "hero": {"id": "compiler-bug-shrine", "role": "Rear visual landmark; leave central enemy space quiet", "reservedBoundsMeters": [11,4,3]},
+  "symmetry": {"mode": "none", "order": 1, "appliesTo": ["tower skyline", "terminal placement", "debris"], "exceptions": ["Shrine bug has paired circuit limbs; battle reserve centered for gameplay"]},
+  "circulation": {"description": "No walkable level; fixed battle stage with unobstructed central character reserve", "minimumClearanceMeters": 4},
+  "productionCamera": {"viewport": [1440,900], "location": [0,-23,13], "target": [0,1,1.4], "projection": "orthographic", "orthographicScale": 25},
+  "performanceBudget": {"maxSceneTriangles": 100000, "note": "Offline art source; runtime budget not yet established"},
+  "creditBudget": {"maximumCredits": 0, "approvalRequired": true},
+  "environment": {"type": "procedural", "identity": "bugbound-corrupted-shrine", "source": "../scripts/generate_room.py"},
+  "scope": "User explicitly requested immediate procedural implementation and local preview. Concept-image/Meshy production gates do not apply to this authorized prototype; no formal production gate passed."
+}

@@ -1,0 +1,10 @@
+# Reproducible local outputs: keep large binary artwork out of ordinary Git.
+scenes/*
+!scenes/.gitkeep
+renders/*
+!renders/.gitkeep
+exports/*
+!exports/.gitkeep
+__pycache__/
+*.blend1
+*.blend2

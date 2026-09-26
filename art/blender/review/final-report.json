@@ -1,0 +1,22 @@
+{
+  "schema": "game-room.room-final-report.v1",
+  "roomId": "act1-battle-room-01",
+  "gates": {"function": false, "form": false, "runtime": false},
+  "scope": "Procedural prototype and locally verified Godot integration; not a human production-gate sign-off. See godot-integration.md.",
+  "verification": {
+    "blenderVersion": "5.2.2 LTS",
+    "seed": 1701,
+    "evaluatedTriangles": 21760,
+    "triangleBudget": 100000,
+    "combatEnvelopeClear": true,
+    "productionRender": "../renders/Act1_BattleRoom_01_preview.png",
+    "generationReport": "../renders/generation-report.json",
+    "viewport": [1440,900]
+  },
+  "postmortem": {
+    "observations": ["Split-shell six-legged bug reads as the rear focus", "Cyan and magenta lighting separates the asymmetric tower groups", "Central floor is unobstructed and lower contrast than the frame"],
+    "corrections": ["Extended floor/backdrop after draft exposed stage boundary in production camera", "Added peeled server plates, severed traces and toppled memory cartridge to strengthen software-ruin identity"],
+    "remainingRisks": ["Human art review pending", "Larger parallax than the verified 1/3/5 px needs renewed occlusion/shadow review", "Front/top are intentionally open stage boundaries; not a navigable 3D room"]
+  },
+  "proposedLessons": []
+}

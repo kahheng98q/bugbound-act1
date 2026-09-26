@@ -89,10 +89,10 @@ func check_preview_interactions() -> void:
 	await move_pointer_outside(second)
 	first.release_focus()
 	await process_frame
-	check(preview.text == game.localize("Hover or focus a card to preview its effects."), "CardPreview clears after focus exit")
+	check(preview.text == game.localize("1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map"), "CardPreview clears after focus exit")
 	game.render()
 	await settle()
-	check(preview_label().text == game.localize("Hover or focus a card to preview its effects."), "CardPreview clears after combat state rebuild")
+	check(preview_label().text == game.localize("1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map"), "CardPreview clears after combat state rebuild")
 	var b = game.run.battle
 	b.bug = "firewall"
 	b.energy = 3

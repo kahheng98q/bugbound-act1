@@ -60,7 +60,7 @@ func check_combat_matrix_layout() -> void:
 				check(body.get_global_rect().position.y >= 0 and body.get_global_rect().end.y <= viewport.end.y, "Combat card body fits viewport height")
 				check(item.get_global_rect().encloses(body.get_global_rect()), "Combat card text fits its paper")
 				if card_count <= 5: check(viewport.encloses(item.get_global_rect()), "Opening hand card fits viewport")
-		if item.text == game.localize("END TURN  ↵"):
+		if item.text == game.localize("END TURN  [E]"):
 			end_turn_found = true
 			check(viewport.encloses(item.get_global_rect()), "END TURN is within viewport")
 	check(card_count > 0, "Combat hand has cards")
