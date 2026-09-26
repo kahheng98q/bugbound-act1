@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="256" viewBox="0 0 512 256">
+<rect width="512" height="256" fill="#17383d"/>
+<g opacity=".28" fill="#34e4c0"><rect x="28" y="42" width="18" height="14"/><rect x="458" y="58" width="14" height="18"/><rect x="72" y="198" width="12" height="12"/><rect x="426" y="190" width="20" height="12"/></g>
+<g stroke="#c8f7ef" stroke-width="5" fill="none" opacity=".95">
+<path d="M256 18 L256 238 M96 68 L416 188 M416 68 L96 188 M150 26 L362 230 M362 26 L150 230"/>
+<ellipse cx="256" cy="128" rx="82" ry="50"/><ellipse cx="256" cy="128" rx="136" ry="84"/>
+</g>
+<g stroke="#7af0dc" stroke-width="4" fill="none"><path d="M256 18C220 55 190 77 150 86M256 18C292 55 322 77 362 86M96 68C140 83 166 99 184 128M416 68C372 83 346 99 328 128M96 188C140 173 166 157 184 128M416 188C372 173 346 157 328 128"/></g>
+<g transform="translate(256 128)">
+<circle r="34" fill="#111c2c" stroke="#081018" stroke-width="6"/><circle cy="-34" r="22" fill="#111c2c" stroke="#081018" stroke-width="6"/>
+<g stroke="#081018" stroke-width="7" stroke-linecap="round"><path d="M-24 -10L-58 -34M24 -10L58 -34M-28 6L-66 4M28 6L66 4M-24 22L-56 48M24 22L56 48"/></g>
+<path d="M-14 -40L-2 -30L-17 -22Z" fill="#ff7a3d"/><path d="M14 -40L2 -30L17 -22Z" fill="#ff7a3d"/>
+</g></svg>
