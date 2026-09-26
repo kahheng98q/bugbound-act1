@@ -1,9 +1,6 @@
 extends Button
 
-const INK := Color("15272c")
-const CORAL := Color("dd725e")
-const TEAL := Color("60b69b")
-const AMBER := Color("e7b94c")
+const BugboundTheme = preload("res://ui/bugbound_theme.gd")
 var _locked := false
 var inspection_mode := false
 var art_height := 104.0
@@ -39,6 +36,11 @@ func _ready() -> void:
 	get_viewport().mouse_exited.connect(func(): _pointer = Vector2(-10000, -10000))
 	flat = false
 	theme_type_variation = "PaperCard"
+	$Margin/Body/Top/Cost/Value.add_theme_color_override("font_color", BugboundTheme.INK)
+	$Margin/Body/Top/Type.add_theme_color_override("font_color", BugboundTheme.CYAN)
+	$Margin/Body/Name.add_theme_color_override("font_color", BugboundTheme.TEXT)
+	$Margin/Body/Effect.add_theme_color_override("font_color", BugboundTheme.MUTED)
+	$Margin/Body/LockNotice.add_theme_color_override("font_color", BugboundTheme.MAGENTA)
 	resized.connect(func(): _fit_art.call_deferred())
 	$Margin/Body.minimum_size_changed.connect(func(): _fit_art.call_deferred())
 	_fit_art.call_deferred()
@@ -61,10 +63,10 @@ func configure(card: Dictionary, localize: Callable, action: Callable, locked: b
 	if not inspect and not pressed.is_connected(action): pressed.connect(action)
 	tooltip_text = localize.call(Catalog.describe(card))
 	var kind := str(card.get("kind", "skill"))
-	var accent := AMBER if card.get("key", "") in Catalog.BEE or card.has("artSlot") else _accent_for(kind)
+	var accent := BugboundTheme.ACID if card.get("key", "") in Catalog.BEE or card.has("artSlot") else _accent_for(kind)
 	$Margin/Body/Top/Cost/Value.text = str(int(card.get("cost", 0)))
 	$Margin/Body/Top/Type.text = localize.call(kind.to_upper())
-	$Margin/Body/Top/Type.add_theme_color_override("font_color", accent.darkened(0.52))
+	$Margin/Body/Top/Type.add_theme_color_override("font_color", accent)
 	$Margin/Body/Name.text = localize.call(str(card.get("name", "")))
 	$Margin/Body/Effect.text = localize.call(Catalog.describe(card))
 	$Margin/Body/Effect.add_theme_font_size_override("font_size", 16)
@@ -72,6 +74,7 @@ func configure(card: Dictionary, localize: Callable, action: Callable, locked: b
 	$Margin/Body/LockNotice.add_theme_font_size_override("font_size", 14)
 	$Margin/Body/LockNotice.visible = locked
 	$Margin/Body/LockNotice.text = localize.call("REQUIREMENTS NOT MET")
+	$Margin/Body/LockNotice.add_theme_color_override("font_color", BugboundTheme.MAGENTA)
 	$Margin/Body/ArtFrame.add_theme_stylebox_override("panel", _frame_style(accent))
 	$Margin/Body/Top/Cost.add_theme_stylebox_override("panel", _cost_style(accent))
 	_set_art(card)
@@ -114,31 +117,20 @@ func _set_art(card: Dictionary) -> void:
 	$Margin/Body/ArtFrame/Art.material = paper_material
 
 func _frame_style(accent: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("e4dfca")
-	style.border_color = accent.darkened(0.24)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(6)
-	style.content_margin_left = 4
-	style.content_margin_right = 4
-	style.content_margin_top = 4
-	style.content_margin_bottom = 4
-	return style
+	# The art keeps its paper-cutout shader while this dark well frames it in the card's neon accent.
+	return BugboundTheme.panel_style(BugboundTheme.INK.lightened(0.1), accent, 4)
 
 func _cost_style(accent: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = accent
+	var style := BugboundTheme.panel_style(accent, accent.lightened(0.24), 2)
 	style.set_corner_radius_all(12)
 	style.content_margin_left = 9
 	style.content_margin_right = 9
-	style.content_margin_top = 2
-	style.content_margin_bottom = 2
 	return style
 
 func _accent_for(kind: String) -> Color:
-	return CORAL if kind == "attack" else (AMBER if kind == "bee" else TEAL)
+	return BugboundTheme.MAGENTA if kind == "attack" else (BugboundTheme.ACID if kind == "bee" else BugboundTheme.CYAN)
 
 func _apply_locked_state() -> void:
 	$Margin/Body/ArtFrame/Art.modulate = Color(0.54, 0.59, 0.58, 1.0) if _locked else Color.WHITE
-	$Margin/Body/Name.modulate = Color.WHITE
-	$Margin/Body/Effect.modulate = Color.WHITE
+	$Margin/Body/Name.modulate = BugboundTheme.MUTED if _locked else BugboundTheme.TEXT
+	$Margin/Body/Effect.modulate = BugboundTheme.MUTED if _locked else BugboundTheme.TEXT

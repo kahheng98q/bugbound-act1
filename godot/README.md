@@ -10,9 +10,36 @@ This folder is the native Godot 4.5 implementation of the Act 1 vertical slice. 
 - `ui/game_ui.gd` / `ui/card_view.gd` — native responsive Control UI and card presentation.
 - `scenes/main.tscn` / `scenes/card.tscn` — reusable scene entry points.
 
-The UI uses illustrated paper cards, a connected route map, health bars, a dedicated
+The UI uses illustrated terminal cards, a connected route map, health bars, a dedicated
 bug monitor, and centered dialogs. The player-facing UI uses Chinese only; the former runtime language-switching path has been removed.
 The hand scrolls horizontally when it contains more cards than fit in the window.
+
+### BUGBOUND combat visual system
+
+`ui/bugbound_theme.gd` centralizes navy surfaces, readable text, cyan shielding,
+magenta threats, acid-green resources, spacing, asymmetric borders, subtle edge
+glow, and static packet marks. `ui/game_ui.gd` builds shared button/card theme
+variations and applies the same terminal treatment to status, intent, previews,
+the bug monitor, pile inspectors, and numbered combat-log entries. HP uses a
+segmented meter; Block uses a cyan outlined diamond badge with an explicit count.
+Decorations ignore input and do not flicker or consume gameplay RNG.
+
+`ui/game_feel.gd` reuses the palette for impact bursts, shield feedback, damage,
+and completion popups. `data/translations.json` includes combat shortcut and
+empty-pile copy. Tests in `tests/ui_smoke.gd`, `test_combat_clarity.gd`,
+`test_game_feel.gd`, and `test_game.gd` cover full viewport fit, pile/log entry
+points, stable previews, current Chinese labels, and exhaust retention.
+
+`ui/card_view.gd` and `scenes/card.tscn` retain readable rules and existing art,
+with cyan skill, magenta attack, and acid-green bee labels and cost chips.
+The draw/discard/exhaust buttons open read-only piles. `core/combat.gd` retains
+exhausted/removed cards for inspection without returning them to the draw pool.
+
+Art carryovers: the existing cutout card illustrations, bee/spider portraits,
+enemy portraits, and atlas icons are retained, not newly painted glitchpunk art.
+Their terminal framing is updated; the older pale cutout fringes and hand-drawn
+icon outlines remain candidates for a future art pass. No replacement art was
+generated for this restyle.
 
 Combat shows incoming damage after current Block (including lethal warnings),
 marks playable cards that trigger the active bug, and explains its reward/risk

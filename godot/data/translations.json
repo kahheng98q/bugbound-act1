@@ -1,5 +1,13 @@
 [
   [
+    "No cards here.",
+    "此牌堆暂无卡牌。"
+  ],
+  [
+    "1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map",
+    "1–0 选牌 · Enter 出牌 · E 结束回合 · D 牌组 · A 抽牌 · S 弃牌 · M 地图"
+  ],
+  [
     "Game controls",
     "游戏控制"
   ],

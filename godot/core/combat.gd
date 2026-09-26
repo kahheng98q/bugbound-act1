@@ -12,6 +12,8 @@ var energy := 3
 var turn := 1
 var deck: Array = []
 var discard: Array = []
+## Retain removed cards for the read-only combat pile inspector.
+var exhaust: Array = []
 var hand: Array = []
 var bug: String
 var progress := 0
@@ -186,6 +188,7 @@ func play(id: int) -> bool:
 	energy += card.get("energy", 0)
 	draw(card.get("draw", 0))
 	if not card.get("exhausted", false) and card.key != "sting": discard.append(card)
+	else: exhaust.append(card)
 	if card.get("consumeCaptured", false) and not web.is_empty(): web.pop_front()
 	if card.get("consumeAllCaptured", false): web.clear()
 	if card.get("releaseCaptured", false) and not web.is_empty(): release_captured_bug(web.pop_front())

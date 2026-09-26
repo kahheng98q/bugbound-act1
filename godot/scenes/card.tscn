@@ -37,7 +37,6 @@ mouse_filter = 2
 
 [node name="Value" type="Label" parent="Margin/Body/Top/Cost"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.082, 0.153, 0.173, 1)
 theme_override_font_sizes/font_size = 19
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -69,7 +68,6 @@ mouse_filter = 2
 [node name="Name" type="Label" parent="Margin/Body"]
 custom_minimum_size = Vector2(0, 25)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.082, 0.153, 0.173, 1)
 theme_override_font_sizes/font_size = 18
 autowrap_mode = 2
 vertical_alignment = 1
@@ -79,7 +77,6 @@ mouse_filter = 2
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_colors/font_color = Color(0.082, 0.153, 0.173, 1)
 theme_override_font_sizes/font_size = 15
 autowrap_mode = 2
 vertical_alignment = 0
@@ -88,7 +85,6 @@ mouse_filter = 2
 [node name="LockNotice" type="Label" parent="Margin/Body"]
 custom_minimum_size = Vector2(0, 17)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.48, 0.19, 0.14, 1)
 theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 vertical_alignment = 1

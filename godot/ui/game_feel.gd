@@ -1,5 +1,6 @@
 class_name GameFeel
 extends Node
+const VISUAL = preload("res://ui/bugbound_theme.gd")
 ## A presentation-only effect layer. Callers retain ownership of live gameplay nodes.
 
 const DEFAULT_SETTINGS = preload("res://ui/default_game_feel.tres")
@@ -100,7 +101,7 @@ func card_play(card: Control, target_position: Vector2, on_impact: Callable = Ca
 	tween.parallel().tween_property(card, "scale", origin_scale * 0.86, _duration(settings.play_duration))
 	tween.tween_callback(func():
 		if not is_instance_valid(card): return
-		_impact_burst(target_position, Color("67e8f9"))
+		_impact_burst(target_position, VISUAL.CYAN)
 		if on_impact.is_valid(): on_impact.call()
 		card.queue_free())
 	return tween
@@ -128,7 +129,7 @@ func enemy_attack(attacker: Control, target_position: Vector2, damage_amount: in
 	tween.tween_property(attacker, "position", _center_target(attacker, impact_center), _duration(settings.enemy_attack_launch_duration))
 	tween.parallel().tween_property(attacker, "scale", origin_scale * 0.94, _duration(settings.enemy_attack_launch_duration))
 	tween.tween_callback(func():
-		var hit_color := Color("75cbb0") if damage_amount == 0 else Color("ff5c6c")
+		var hit_color := VISUAL.CYAN if damage_amount == 0 else VISUAL.MAGENTA
 		_impact_burst(target_position, hit_color)
 		_system_flash(hit_color, settings.enemy_attack_flash_duration)
 		if is_instance_valid(screen_target):
@@ -140,7 +141,7 @@ func enemy_attack(attacker: Control, target_position: Vector2, damage_amount: in
 		if absorbed > 0 and damage_amount == 0: return
 		var popup := _text_popup(message, target_position - Vector2(28, 42))
 		popup.add_theme_font_size_override("font_size", 28)
-		popup.add_theme_color_override("font_color", Color("ff8b94") if damage_amount > 0 else Color("75cbb0"))
+		popup.add_theme_color_override("font_color", VISUAL.MAGENTA if damage_amount > 0 else VISUAL.CYAN)
 		_popup_motion(popup, settings.damage_popup_duration))
 	tween.tween_interval(_duration(settings.enemy_attack_flash_duration) * 0.45)
 	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
@@ -155,12 +156,12 @@ func enemy_attack(attacker: Control, target_position: Vector2, damage_amount: in
 
 func block_feedback(at: Vector2, message: String) -> void:
 	_ensure_layer()
-	_impact_burst(at, Color("75cbb0"))
+	_impact_burst(at, VISUAL.CYAN)
 	var popup := _text_popup(message, at - Vector2(36, 30))
 	popup.add_theme_font_size_override("font_size", 24)
-	popup.add_theme_color_override("font_color", Color("102126"))
+	popup.add_theme_color_override("font_color", VISUAL.INK)
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("75cbb0")
+	style.bg_color = VISUAL.CYAN
 	style.set_corner_radius_all(8)
 	style.content_margin_left = 10
 	style.content_margin_right = 10
@@ -177,7 +178,7 @@ func enemy_damage(actor: Control, amount: int, on_finished: Callable = Callable(
 	var impact_point := actor.get_global_rect().get_center()
 	var popup := _damage_popup(amount, actor.global_position + Vector2(actor.size.x * 0.5, 0))
 	_flash(actor, Color(1.55, 1.30, 0.88, 1.0), settings.flash_duration)
-	_impact_burst(impact_point, Color("ffd166"))
+	_impact_burst(impact_point, VISUAL.ACID)
 	var tween := _track(create_tween().bind_node(actor))
 	_actor_effects[actor.get_instance_id()] = tween
 	var duration := _duration(settings.damage_duration)
@@ -202,7 +203,7 @@ func enemy_death(actor: Control, on_finished: Callable = Callable()) -> Tween:
 	var tween := _track(create_tween().bind_node(actor))
 	_actor_effects[actor.get_instance_id()] = tween
 	var duration := _duration(settings.death_duration)
-	_impact_burst(actor.get_global_rect().get_center(), Color("ff6b6b"))
+	_impact_burst(actor.get_global_rect().get_center(), VISUAL.MAGENTA)
 	tween.tween_property(actor, "position:x", state.position.x - 7.0, duration * 0.12)
 	tween.tween_property(actor, "position:x", state.position.x + 7.0, duration * 0.12)
 	tween.tween_property(actor, "position", state.position, duration * 0.12)
@@ -226,9 +227,9 @@ func monitor_complete(monitor: Control, progress: Control, completion_text: Stri
 	if is_instance_valid(progress):
 		_flash(progress, Color(1.50, 1.26, 0.70, 1.0), settings.monitor_flash_duration)
 	var alert_center := monitor.get_global_rect().get_center() if is_instance_valid(monitor) else target_position
-	_impact_burst(alert_center, Color("67e8f9"))
-	_system_flash(Color("67e8f9"), settings.monitor_flash_duration)
-	_scanline(Color("67e8f9"))
+	_impact_burst(alert_center, VISUAL.CYAN)
+	_system_flash(VISUAL.CYAN, settings.monitor_flash_duration)
+	_scanline(VISUAL.CYAN)
 	var pop := _text_popup(completion_text, monitor.global_position + Vector2(10, 4) if is_instance_valid(monitor) else target_position)
 	_center_pivot(pop)
 	pop.scale = Vector2.ONE * 0.7
@@ -257,10 +258,10 @@ func monitor_complete(monitor: Control, progress: Control, completion_text: Stri
 
 func show_system_alert(message: String, color_type := "cyan", shake_target: Control = null) -> Tween:
 	_ensure_layer()
-	var color := Color("67e8f9")
+	var color := VISUAL.CYAN
 	match color_type.to_lower():
-		"red": color = Color("ff5c6c")
-		"purple": color = Color("c084fc")
+		"red": color = VISUAL.MAGENTA
+		"purple": color = VISUAL.MAGENTA
 	_system_flash(color, settings.alert_flash_duration)
 	_scanline(color)
 	var label := _text_popup(message, effects_root.size * 0.5)
@@ -535,7 +536,7 @@ func _damage_popup(amount: int, at: Vector2) -> Label:
 	var label := Label.new()
 	label.text = "-%d" % amount
 	label.add_theme_font_size_override("font_size", 26)
-	label.add_theme_color_override("font_color", Color("ffdd8a"))
+	label.add_theme_color_override("font_color", VISUAL.ACID)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	effects_root.add_child(label)
 	label.global_position = at
@@ -546,9 +547,9 @@ func _text_popup(message: String, at: Vector2) -> Label:
 	var label := Label.new()
 	label.text = message
 	label.add_theme_font_size_override("font_size", 22)
-	label.add_theme_color_override("font_color", Color("f6d786"))
+	label.add_theme_color_override("font_color", VISUAL.ACID)
 	var background := StyleBoxFlat.new()
-	background.bg_color = Color("18282b")
+	background.bg_color = VISUAL.SURFACE
 	background.set_content_margin_all(4)
 	background.set_corner_radius_all(4)
 	label.add_theme_stylebox_override("normal", background)

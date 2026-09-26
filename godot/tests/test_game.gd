@@ -117,7 +117,9 @@ func bee_rules() -> void:
 	var b := run.battle
 	b.play(give(b, "nectar").id)
 	check(b.energy == 0 and b.bee.bank == 3 and b.discard.is_empty(), "Nectar caches and exhausts")
+	check(b.exhaust.size() == 1 and b.exhaust[0].key == "nectar", "Exhaust inspector retains the played card")
 	b.end_turn()
+	check(not b.hand.any(func(c): return c.key == "nectar"), "Exhausted card stays out of future draws")
 	check(b.energy == 6 and b.bee.bank == 0, "Cached energy returns once")
 	b.bug = "loop"
 	b.play(give(b, "pollen").id)
@@ -136,6 +138,7 @@ func bee_rules() -> void:
 	run.cards.append(Catalog.card("sting"))
 	b.play(give(b, "sting").id)
 	check(not run.cards.any(func(c): return c.key == "sting"), "Sting permanently removes a run copy")
+	check(b.exhaust.any(func(c): return c.key == "sting"), "Removed Sting is visible in the battle exhaust pile")
 	dispose(run)
 	run = fresh()
 	b = run.battle

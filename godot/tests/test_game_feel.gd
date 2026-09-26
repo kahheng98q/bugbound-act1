@@ -166,7 +166,6 @@ func service_lifecycle() -> void:
 func ui_integration() -> void:
 	game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
-	game.language = "en"
 	game.build_matcher()
 	game.run.start("BUG-404-LOL")
 	game.run.enter("t0l0")
@@ -260,7 +259,7 @@ func ui_integration() -> void:
 	expected.play(trigger.id)
 	check(game.run.bugs_triggered == expected.bugs_triggered, "Known monitor trigger matches direct rules")
 	await settle(game.game_feel.settings.anticipation_duration + game.game_feel.settings.play_duration + 0.05)
-	var completion: Array = game.game_feel.effects_root.get_children().filter(func(node): return node is Label and node.text == "BUG COMPLETE!")
+	var completion: Array = game.game_feel.effects_root.get_children().filter(func(node): return node is Label and node.text == game.localize("BUG COMPLETE!"))
 	check(completion.size() == 1 and completion[0].modulate.a > 0.5, "Monitor completion text remains readable after impact")
 	await screenshot("monitor-completion")
 	await settle(1.0)
@@ -295,7 +294,7 @@ func ui_integration() -> void:
 	await settle()
 	game.play_card(game.run.battle.hand[0].id)
 	await settle(game.game_feel.settings.anticipation_duration + game.game_feel.settings.play_duration + 0.1)
-	var block_popups: Array = game.game_feel.effects_root.get_children().filter(func(node): return node is Label and node.text == "+6 BLOCK")
+	var block_popups: Array = game.game_feel.effects_root.get_children().filter(func(node): return node is Label and node.text == game.localize("+%d BLOCK") % 6)
 	check(game.run.battle.block == 6 and block_popups.size() == 1, "Playing defense displays the actual Block gain")
 	await screenshot("block-gain")
 	await settle(1.3)
@@ -305,7 +304,7 @@ func ui_integration() -> void:
 	var guarded_hp: int = game.run.battle.hp
 	game.end_turn()
 	await settle(game.game_feel.settings.enemy_attack_windup_duration + game.game_feel.settings.enemy_attack_launch_duration + 0.1)
-	var absorbed_popups: Array = game.game_feel.effects_root.get_children().filter(func(node): return node is Label and node.text == "BLOCKED 4")
+	var absorbed_popups: Array = game.game_feel.effects_root.get_children().filter(func(node): return node is Label and node.text == game.localize("BLOCKED") + " 4")
 	check(game.run.battle.hp == guarded_hp and absorbed_popups.size() == 1, "Fully guarded attack displays the amount absorbed without HP loss")
 	await screenshot("block-absorb")
 	await settle(1.3)

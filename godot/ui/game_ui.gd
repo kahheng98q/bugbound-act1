@@ -8,18 +8,19 @@ const FEEDBACK = preload("res://ui/combat_feedback.gd")
 const BEE_PORTRAIT = preload("res://ui/bee_portrait.gd")
 const SPIDER_PORTRAIT = preload("res://ui/spider_portrait.gd")
 const SHRINE_BACKDROP = preload("res://ui/shrine_backdrop.gd")
+const VISUAL = preload("res://ui/bugbound_theme.gd")
 @export var game_feel_settings: GameFeelSettings = preload("res://ui/default_game_feel.tres")
 var game_feel := GameFeel.new()
 var combat_feedback := FEEDBACK.new()
 var shrine_backdrop := SHRINE_BACKDROP.new()
-const INK := Color("101b22")
-const SURFACE := Color("182830")
-const LINE := Color("30434b")
-const TEXT := Color("f0f1e9")
-const MUTED := Color("99afb1")
-const HONEY := Color("e7b94c")
-const MINT := Color("75cbb0")
-const CORAL := Color("ee8c77")
+const INK := VISUAL.INK
+const SURFACE := VISUAL.SURFACE
+const LINE := VISUAL.LINE
+const TEXT := VISUAL.TEXT
+const MUTED := VISUAL.MUTED
+const HONEY := VISUAL.ACID
+const MINT := VISUAL.CYAN
+const CORAL := VISUAL.MAGENTA
 var run := RunState.new()
 var content: VBoxContainer
 var overlay: Control
@@ -72,14 +73,8 @@ func _draw() -> void:
 		for y in range(0, int(size.y), 36): draw_circle(Vector2(x, y), 1, Color(0.4, 0.6, 0.6, 0.09))
 	draw_line(Vector2.ZERO, Vector2(size.x, 0), HONEY, 4)
 
-func box(fill: Color, border := LINE, radius := 12, padding := 18) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = fill
-	style.border_color = border
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(radius)
-	style.set_content_margin_all(padding)
-	return style
+func box(fill: Color, border := LINE, _radius := 3, padding := 18) -> StyleBoxFlat:
+	return VISUAL.panel_style(fill, border, padding)
 
 func make_theme() -> Theme:
 	var result := Theme.new()
@@ -95,14 +90,20 @@ func make_theme() -> Theme:
 	result.set_color("font_pressed_color", "Button", TEXT)
 	result.set_color("font_focus_color", "Button", TEXT)
 	for state in ["normal", "hover", "pressed", "disabled"]:
-		var fills := {"normal": SURFACE, "hover": Color("30474c"), "pressed": INK, "disabled": Color("152229")}
+		var fills := {"normal": SURFACE, "hover": Color("1d354b"), "pressed": INK, "disabled": Color("111725")}
 		result.set_stylebox(state, "Button", box(fills[state], MINT if state == "hover" else LINE, 8, 10))
 	var focus := box(Color.TRANSPARENT, HONEY, 8, 0)
 	focus.set_border_width_all(2)
 	result.set_stylebox("focus", "Button", focus)
+	result.set_type_variation("CompactAction", "Button")
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var compact_style := result.get_stylebox(state, "Button").duplicate() as StyleBoxFlat
+		compact_style.content_margin_top = 3
+		compact_style.content_margin_bottom = 3
+		result.set_stylebox(state, "CompactAction", compact_style)
 	result.set_type_variation("PrimaryAction", "Button")
 	for state in ["normal", "hover", "pressed"]:
-		var fills := {"normal": HONEY, "hover": Color("f6d786"), "pressed": Color("c99a36")}
+		var fills := {"normal": HONEY, "hover": HONEY.lightened(0.2), "pressed": HONEY.darkened(0.2)}
 		result.set_stylebox(state, "PrimaryAction", box(fills[state], HONEY, 8, 12))
 	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
 		result.set_color(state, "PrimaryAction", INK)
@@ -111,10 +112,10 @@ func make_theme() -> Theme:
 	result.set_stylebox("focus", "PrimaryAction", primary_focus)
 	result.set_type_variation("PaperCard", "Button")
 	for state in ["normal", "hover", "pressed", "disabled"]:
-		var fills := {"normal": Color("f1eddc"), "hover": Color("fffbea"), "pressed": Color("e3d8b9"), "disabled": Color("d5d2c5")}
-		var card_style := box(fills[state], HONEY if state == "hover" else Color("b4ad94"), 10, 0)
+		var fills := {"normal": SURFACE, "hover": Color("1b3046"), "pressed": INK, "disabled": Color("141c29")}
+		var card_style := box(fills[state], HONEY if state == "hover" else LINE, 3, 0)
 		card_style.set_border_width_all(2 if state == "hover" else 1)
-		card_style.shadow_color = Color(0, 0, 0, 0.25)
+		card_style.shadow_color = Color(MINT, 0.15)
 		card_style.shadow_size = 3
 		card_style.shadow_offset = Vector2(0, 3)
 		result.set_stylebox(state, "PaperCard", card_style)
@@ -123,8 +124,10 @@ func make_theme() -> Theme:
 	result.set_stylebox("focus", "LineEdit", box(INK, HONEY, 8, 14))
 	result.set_color("font_color", "LineEdit", TEXT)
 	result.set_color("caret_color", "LineEdit", HONEY)
-	result.set_constant("separation", "VBoxContainer", 12)
-	result.set_constant("separation", "HBoxContainer", 12)
+	result.set_stylebox("panel", "TooltipPanel", box(INK, MINT, 3, 12))
+	result.set_color("font_color", "TooltipLabel", TEXT)
+	result.set_constant("separation", "VBoxContainer", VISUAL.GAP)
+	result.set_constant("separation", "HBoxContainer", VISUAL.GAP)
 	result.set_constant("h_separation", "GridContainer", 16)
 	result.set_constant("v_separation", "GridContainer", 16)
 	return result
@@ -203,7 +206,9 @@ func panel(parent: Node, fill := SURFACE, border := LINE, padding := 20) -> VBox
 	frame.add_theme_stylebox_override("panel", box(fill, border, 14, padding))
 	frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(frame)
-	return column(frame)
+	var body := column(frame)
+	VISUAL.decorate(frame, border)
+	return body
 
 func spacer(parent: Node, height := 8) -> void:
 	var item := Control.new()
@@ -495,11 +500,11 @@ func portrait(parent: Node, key: String, height := 140) -> TextureRect:
 func health(parent: Node, value: int, maximum: int, color: Color, status := "HP", block_amount := -1) -> void:
 	var line := row(parent)
 	if block_amount >= 0:
-		var badge := label(line, "%d BLOCK" % block_amount, 20, INK if block_amount > 0 else MINT)
+		var badge := label(line, "◇ %d BLOCK" % block_amount, 18, MINT)
 		badge.name = "BlockBadge"
 		badge.autowrap_mode = TextServer.AUTOWRAP_OFF
 		badge.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		var badge_style := box(MINT if block_amount > 0 else Color("24473f"), MINT, 6, 6)
+		var badge_style := box(Color("153342") if block_amount > 0 else INK, MINT if block_amount > 0 else LINE, 3, 6)
 		badge_style.content_margin_top = 0
 		badge_style.content_margin_bottom = 0
 		badge.add_theme_stylebox_override("normal", badge_style)
@@ -507,15 +512,25 @@ func health(parent: Node, value: int, maximum: int, color: Color, status := "HP"
 		if status != "HP": tag(line, status, color)
 	else:
 		tag(line, status, color)
-	label(line, "%d / %d" % [value, maximum], 16).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	label(line, "HP %d / %d" % [value, maximum], 16).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	var meter := ProgressBar.new()
 	meter.max_value = maximum
 	meter.value = value
 	meter.show_percentage = false
-	meter.custom_minimum_size.y = 9
-	meter.add_theme_stylebox_override("background", box(INK, INK, 4, 0))
-	meter.add_theme_stylebox_override("fill", box(color, color, 4, 0))
+	meter.custom_minimum_size.y = 12
+	meter.add_theme_stylebox_override("background", box(INK, LINE, 0, 0))
+	meter.add_theme_stylebox_override("fill", box(color, color, 0, 0))
 	parent.add_child(meter)
+	var ticks := Control.new()
+	ticks.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ticks.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	meter.add_child(ticks)
+	ticks.draw.connect(func():
+		for i in range(1, 10):
+			var x := ticks.size.x * i / 10.0
+			ticks.draw_line(Vector2(x, 2), Vector2(x, ticks.size.y - 2), Color(INK, 0.65), 2)
+	)
+	ticks.resized.connect(ticks.queue_redraw)
 
 func battle_screen() -> void:
 	var b := run.battle
@@ -523,7 +538,7 @@ func battle_screen() -> void:
 	var compact := get_viewport_rect().size.y < 800
 	if compact: content.add_theme_constant_override("separation", 2)
 	var stage := row(content, 16)
-	var arena := panel(stage, Color(0.035, 0.075, 0.1, 0.68), Color("415e69"), 9 if compact else 16)
+	var arena := panel(stage, Color(INK, 0.88), LINE, 9 if compact else 16)
 	if compact: arena.add_theme_constant_override("separation", 8)
 	arena.get_parent().size_flags_stretch_ratio = 3.2
 	var title := row(arena)
@@ -550,7 +565,7 @@ func battle_screen() -> void:
 	player_stats.add_theme_constant_override("separation", 6)
 	player_stats.alignment = BoxContainer.ALIGNMENT_CENTER
 	label(player_stats, "Spider Debugger" if run.loadout_key == "spider" else "Bee Programmer", 22)
-	health(player_stats, b.hp, run.max_hp, MINT, "HP", b.block)
+	health(player_stats, b.hp, run.max_hp, HONEY, "HP", b.block)
 	var enemy_row := row(enemy_side)
 	combat_feedback.enemy = portrait(enemy_row, b.enemy_key, 72 if compact else 140)
 	var enemy_stats := column(enemy_row)
@@ -565,7 +580,7 @@ func battle_screen() -> void:
 		button(lesson_row, "×", dismiss_guidance).tooltip_text = localize("Dismiss guidance")
 	else:
 		label(player, enemy.feature, 16, MUTED)
-	var intent := panel(enemy_side, Color("352c2b"), Color("85594d"), 8)
+	var intent := panel(enemy_side, Color("29172d"), CORAL, 8)
 	intent.add_theme_constant_override("separation", 2)
 	label(intent, localize("Attack: %d · Block: %d") % [b.intent_damage(), b.intent.block], 18, CORAL)
 	var incoming := label(intent, localize("After Block: %d damage") % b.incoming_damage(), 18, MINT if b.incoming_damage() == 0 else CORAL)
@@ -573,7 +588,7 @@ func battle_screen() -> void:
 	intent.tooltip_text = localize(b.intent.label) + (localize("  ·  +%d BLOCK") % b.intent.block if b.intent.block else "")
 	incoming.name = "IncomingDamage"
 	incoming.tooltip_text = localize("If you end your turn now. Block resets after the enemy acts.")
-	var bug_panel := panel(stage, Color("18282b"), LINE, 10 if compact else 14)
+	var bug_panel := panel(stage, SURFACE, MINT, 10 if compact else 14)
 	bug_panel.name = "MonitorBody"
 	combat_feedback.monitor = bug_panel.get_parent()
 	combat_feedback.completion_text = localize("BUG COMPLETE!")
@@ -596,7 +611,7 @@ func battle_screen() -> void:
 	if b.enemy_key == "antivirus": tag(bug_status, "THREAT LEVEL %d / 6" % b.threat, CORAL)
 	label(bug_panel, "Triggers replace this bug.", 16, MUTED)
 	var bee_bar := row(content, 18)
-	var energy := panel(bee_bar, Color("24473f"), MINT, 8)
+	var energy := panel(bee_bar, SURFACE, HONEY, 8)
 	energy.get_parent().size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	label(energy, "%d ENERGY" % b.energy, 22, TEXT).autowrap_mode = TextServer.AUTOWRAP_OFF
 	var states: Array[String] = []
@@ -645,14 +660,21 @@ func battle_screen() -> void:
 	pending.name = "PendingEffects"
 	var tools := column(bee_bar, false)
 	tools.add_theme_constant_override("separation", 0)
-	var piles := tag(tools, "HAND %d  ·  DRAW %d  ·  DISCARD %d" % [b.hand.size(), b.deck.size(), b.discard.size()], MUTED)
-	piles.autowrap_mode = TextServer.AUTOWRAP_OFF
-	button(tools, "Battle log", show_log)
+	var piles := row(tools, 4)
+	for pile in [["抽牌", b.deck], ["弃牌", b.discard], ["消耗", b.exhaust]]:
+		var pile_button := button(piles, "%s %d" % [pile[0], pile[1].size()], show_card_pile.bind(pile[0], pile[1]))
+		pile_button.add_theme_font_size_override("font_size", 14)
+		pile_button.theme_type_variation = "CompactAction"
+	button(tools, "Battle log", show_log).theme_type_variation = "CompactAction"
 	button(bee_bar, "END TURN  [E]", end_turn, b.popup_open or not b.choice.is_empty(), true)
 	preview_label = label(content, "1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map", 16, TEXT)
 	preview_label.name = "CardPreview"
 	preview_label.custom_minimum_size.y = 56
 	preview_label.theme_type_variation = "CombatRule"
+	var preview_style := box(Color(INK, 0.94), LINE, 3, 8)
+	preview_style.content_margin_top = 2
+	preview_style.content_margin_bottom = 2
+	preview_label.add_theme_stylebox_override("normal", preview_style)
 	var hand_scroll := ScrollContainer.new()
 	hand_scroll.name = "CombatHand"
 	hand_scroll.custom_minimum_size.y = 284 if compact else 326
@@ -699,7 +721,7 @@ func battle_screen() -> void:
 			if preview.triggers_bug:
 				var notice: Label = view.get_node("Margin/Body/LockNotice")
 				notice.text = localize("TRIGGERS BUG")
-				notice.add_theme_color_override("font_color", Color("775716"))
+				notice.add_theme_color_override("font_color", HONEY)
 				notice.show()
 				details += "\n" + localize("TRIGGERS BUG") + ": " + localize(bug.name) + "\n" + localize("REWARD") + ": " + localize(bug.reward) + "\n" + localize("RISK") + ": " + localize(bug.risk)
 				var highlight := func(): monitor_heading.add_theme_color_override("font_color", TEXT)
@@ -881,9 +903,10 @@ func modal(title_text: String, wide := false, close_action: Callable = Callable(
 	overlay.add_child(center)
 	var frame := PanelContainer.new()
 	frame.custom_minimum_size = Vector2(1120 if wide else 760, 0)
-	frame.add_theme_stylebox_override("panel", box(SURFACE, Color("53645d"), 16, 28))
+	frame.add_theme_stylebox_override("panel", box(SURFACE, MINT, 3, 28))
 	center.add_child(frame)
 	var shell := column(frame)
+	VISUAL.decorate(frame, MINT)
 	var header := row(shell, 8)
 	tag(header, "BUGBOUND  /  SYSTEM WINDOW", HONEY)
 	if close_action.is_valid():
@@ -977,7 +1000,9 @@ func hand_shortcut_index(keycode: Key) -> int:
 func show_log() -> void:
 	var body := modal("Battle log")
 	button(body, "Close", render).grab_focus()
-	for entry in run.battle.log: label(body, entry, 17, MUTED)
+	for i in range(run.battle.log.size()):
+		var entry := label(body, "%02d  ›  %s" % [i + 1, localize(run.battle.log[i])], 17, TEXT)
+		entry.add_theme_stylebox_override("normal", box(INK, LINE, 3, 8))
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not content.visible: return

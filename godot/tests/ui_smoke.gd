@@ -47,6 +47,7 @@ func check_card_bounds() -> void:
 
 func check_combat_matrix_layout() -> void:
 	var viewport := Rect2(Vector2.ZERO, Vector2(root.size))
+	check(game.content.get_global_rect().end.y <= viewport.end.y - 16, "Entire combat presentation fits viewport")
 	var card_count := 0
 	var end_turn_found := false
 	for item in buttons(game):
@@ -80,6 +81,16 @@ func combat_matrix_capture(dimensions: Vector2i) -> void:
 	check(root.size == dimensions, "Capture viewport is exact: %s" % dimensions)
 	check_combat_matrix_layout()
 	await snapshot("combat-%d-zh" % dimensions.x)
+	await press_text("消耗 0")
+	check(game.overlay != null, "Exhaust pile opens from combat controls")
+	await snapshot("combat-exhaust-%d-zh" % dimensions.x)
+	game.render()
+	await settle()
+	await press_text("Battle log")
+	check(game.overlay != null, "Battle log opens from combat controls")
+	await snapshot("combat-log-%d-zh" % dimensions.x)
+	game.render()
+	await settle()
 
 
 func experience_flow() -> void:
@@ -177,7 +188,7 @@ func click_control(item: Control) -> void:
 
 
 func press_text(part: String) -> void:
-	var localized_part := game.localize(part)
+	var localized_part: String = game.localize(part)
 	for item in buttons(game):
 		if localized_part in item.text and not item.disabled:
 			await click_control(item)
@@ -415,7 +426,7 @@ func _run() -> void:
 			break
 	await settle()
 	check(not game.feedback.is_empty(), "Card button executes a command")
-	await press_text("Pause")
+	await press_text("Pause  /  Esc")
 	await snapshot("pause")
 	await press_text("Resume run")
 	game.run.battle.popup_open = true

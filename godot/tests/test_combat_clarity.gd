@@ -59,7 +59,6 @@ func visible_hand() -> void:
 func set_battle(locale: String, size: Vector2i) -> void:
 	root.content_scale_size = Vector2i.ZERO
 	root.size = size
-	game.language = locale
 	game.build_matcher()
 	game.run.start("COMBAT-CLARITY-SEED")
 	game.run.enter("t0l0")
@@ -166,7 +165,6 @@ func check_long_hand() -> void:
 func compact_battle(enemy_key: String, bug_key: String, locale: String) -> void:
 	root.content_scale_size = Vector2i.ZERO
 	root.size = Vector2i(1280, 720)
-	game.language = locale
 	game.build_matcher()
 	game.run.start("COMPACT-CLARITY-SEED")
 	game.run.screen = "battle"
@@ -187,7 +185,7 @@ func compact_battle(enemy_key: String, bug_key: String, locale: String) -> void:
 	await settle()
 
 func check_compact_enemy_bug_matrix() -> void:
-	for locale in ["en", "zh"]:
+	for locale in ["zh"]:
 		for enemy_key in Catalog.data.enemies.keys():
 			for bug_key in Catalog.BUG_KEYS:
 				await compact_battle(enemy_key, bug_key, locale)
@@ -220,7 +218,7 @@ func _run() -> void:
 	game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
 	for dimensions in [Vector2i(1280, 720), Vector2i(1440, 900)]:
-		for locale in ["en", "zh"]:
+		for locale in ["zh"]:
 			await set_battle(locale, dimensions)
 			await check_preview_interactions()
 			await check_preview_rules()
