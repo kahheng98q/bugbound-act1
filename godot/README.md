@@ -11,8 +11,7 @@ This folder is the native Godot 4.5 implementation of the Act 1 vertical slice. 
 - `scenes/main.tscn` / `scenes/card.tscn` — reusable scene entry points.
 
 The UI uses illustrated paper cards, a connected route map, health bars, a dedicated
-bug monitor, and centered dialogs. The player-facing UI currently uses Chinese;
-language switching is reserved for a future localization pass.
+bug monitor, and centered dialogs. The player-facing UI uses Chinese only; the former runtime language-switching path has been removed.
 The hand scrolls horizontally when it contains more cards than fit in the window.
 
 Combat shows incoming damage after current Block (including lethal warnings),
@@ -105,7 +104,7 @@ combat actions. Add `-- --capture` and omit `--headless` to save effect screensh
 ## Validation and launching
 
 UI interaction checks (menu, route selection, card click, pause, popup, rewards,
-events, and English/Chinese card text bounds):
+events, and Chinese card text bounds):
 
 ```powershell
 .\run-godot.bat --headless --path godot --script res://tests/ui_smoke.gd
@@ -120,8 +119,8 @@ Combat-only visual validation uses the same capture workflow:
 .\run-godot.ps1 --path godot --script res://tests/ui_smoke.gd -- --capture --combat-only --states
 ```
 
-It captures seed `BUG-404-LOL` at native 1280×720 and 1440×900 in English
-and Chinese (`work/ui-combat-{width}-{en|zh}.png`). `--states` also checks
+It captures seed `BUG-404-LOL` at native 1280×720 and 1440×900 in Chinese
+(`work/ui-combat-{width}-zh.png`). `--states` also checks
 focus, hover, pressed, unaffordable cards, and every catalog card's compact
 text bounds. Long card effects take space from their illustration before
 text is clipped. Full UI smoke runs include these checks automatically.

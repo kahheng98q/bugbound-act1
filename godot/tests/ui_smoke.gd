@@ -68,60 +68,56 @@ func check_combat_matrix_layout() -> void:
 	var hint := game.find_child("CombatHint", true, false) as Label
 	check(hint != null and hint.size.y >= 20 and hint.size.x >= 120, "Combat action hint has readable space")
 
-func combat_matrix_capture(dimensions: Vector2i, locale: String) -> void:
+
+func combat_matrix_capture(dimensions: Vector2i) -> void:
 	root.content_scale_size = Vector2i.ZERO
 	root.size = dimensions
 	await settle()
-	game.language = locale
-	game.build_matcher()
 	game.run.start("BUG-404-LOL")
 	game.run.enter("t0l0")
 	game.render()
 	await settle()
 	check(root.size == dimensions, "Capture viewport is exact: %s" % dimensions)
 	check_combat_matrix_layout()
-	await snapshot("combat-%d-%s" % [dimensions.x, locale])
+	await snapshot("combat-%d-zh" % dimensions.x)
+
 
 func experience_flow() -> void:
 	for dimensions in [Vector2i(1280, 720), Vector2i(1440, 900)]:
-		for locale in ["en", "zh"]:
-			root.size = dimensions
-			await settle()
-			game.language = locale
-			game.build_matcher()
-			game.run.start("BUG-404-LOL")
-			await settle()
-			check(game.content.get_global_rect().end.y <= dimensions.y - 24, "Map and route context fit viewport: %s %s" % [dimensions, locale])
-			for route in buttons(game).filter(func(item): return item.tooltip_text.begins_with("C:")):
-				var body: Control = route.get_child(0)
-				check(body.get_child(1).size.y > 0 and body.get_child(2).size.y > 0, "Route title and trait have visible space")
-				check(body.get_child(3).get_global_rect().end.y <= route.get_global_rect().end.y, "Route details fit node")
-			await snapshot("map-%d-%s" % [dimensions.x, locale])
-	game.language = "en"
-	game.build_matcher()
+		root.size = dimensions
+		await settle()
+		game.run.start("BUG-404-LOL")
+		await settle()
+		check(game.content.get_global_rect().end.y <= dimensions.y - 24, "Map and route context fit viewport: %s" % dimensions)
+		for route in buttons(game).filter(func(item): return item.tooltip_text.begins_with("C:")):
+			var body: Control = route.get_child(0)
+			check(body.get_child(1).size.y > 0 and body.get_child(2).size.y > 0, "Route title and trait have visible space")
+			check(body.get_child(3).get_global_rect().end.y <= route.get_global_rect().end.y, "Route details fit node")
+		await snapshot("map-%d-zh" % dimensions.x)
 	game.guidance_dismissed = false
 	game.run.enter("t0l0")
 	game.run.battle.bug = "firewall"
 	game.render()
 	await settle()
 	check(game.find_child("FirstBattleGuide", true, false) != null, "First battle has contextual guidance")
-	var marked := buttons(game).filter(func(item): return item.get_script() == load("res://ui/card_view.gd") and item.get_node("Margin/Body/LockNotice").text == "TRIGGERS BUG")
+	var marked := buttons(game).filter(func(item): return item.get_script() == load("res://ui/card_view.gd") and item.get_node("Margin/Body/LockNotice").text == game.localize("TRIGGERS BUG"))
 	check(not marked.is_empty(), "Playable trigger cards are visibly marked")
 	if not marked.is_empty():
 		marked[0].grab_focus()
-		check(marked[0].tooltip_text.contains("REWARD") and marked[0].tooltip_text.contains("RISK"), "Trigger preview explains reward and risk")
+		check(marked[0].tooltip_text.contains(game.localize("REWARD")) and marked[0].tooltip_text.contains(game.localize("RISK")), "Trigger preview explains reward and risk")
 		await snapshot("experience-trigger")
 		await click_control(marked[0])
 		await settle()
 		check(game.bug_lesson.contains("Reward and risk applied"), "First trigger is acknowledged")
 		var incoming: Label = game.find_child("IncomingDamage", true, false)
-		check(incoming.text == "After Block: %d damage" % game.run.battle.incoming_damage(), "Incoming preview updates after playing Block")
+		check(incoming.text == game.localize("After Block: %d damage") % game.run.battle.incoming_damage(), "Incoming preview updates after playing Block")
 	await press_text("×")
 	check(game.find_child("FirstBattleGuide", true, false) == null, "Guidance can be dismissed")
 	game.run.abandon()
 
+
 func combat_states_capture() -> void:
-	await combat_matrix_capture(Vector2i(1280, 720), "en")
+	await combat_matrix_capture(Vector2i(1280, 720))
 	var hand := buttons(game).filter(func(item): return item.get_script() == load("res://ui/card_view.gd"))
 	hand[0].grab_focus()
 	await snapshot("combat-focus")
@@ -146,32 +142,23 @@ func combat_states_capture() -> void:
 	game.render()
 	await settle()
 	check_combat_matrix_layout()
-	await snapshot("combat-disabled")
+	await snapshot("combat-disabled-zh")
 	for item in buttons(game):
 		if item.get_script() == load("res://ui/card_view.gd"):
 			check(item.disabled, "Unaffordable card is disabled")
 			check(item.get_node("Margin/Body/LockNotice").visible, "Disabled card explains its requirement")
-	game.language = "zh"
-	game.build_matcher()
-	game.render()
-	await settle()
-	check_combat_matrix_layout()
-	await snapshot("combat-disabled-zh")
-	# Reward cards have longer effects than the starting hand; check compact text too.
-	for locale in ["en", "zh"]:
-		game.language = locale
-		game.build_matcher()
-		for start in range(0, Catalog.data.cards.size(), 5):
-			game.run.battle.hand.clear()
-			for index in range(start, mini(start + 5, Catalog.data.cards.size())):
-				var card: Dictionary = Catalog.data.cards[index].duplicate(true)
-				card.id = 1000 + index
-				game.run.battle.hand.append(card)
-			game.render()
-			await settle()
-			check_combat_matrix_layout()
-			check_card_bounds()
-		await snapshot("combat-long-cards-" + locale)
+	# Reward cards have longer effects than the starting hand; check compact Chinese text too.
+	for start in range(0, Catalog.data.cards.size(), 5):
+		game.run.battle.hand.clear()
+		for index in range(start, mini(start + 5, Catalog.data.cards.size())):
+			var card: Dictionary = Catalog.data.cards[index].duplicate(true)
+			card.id = 1000 + index
+			game.run.battle.hand.append(card)
+		game.render()
+		await settle()
+		check_combat_matrix_layout()
+		check_card_bounds()
+	await snapshot("combat-long-cards-zh")
 
 func click_control(item: Control) -> void:
 	var point := item.get_global_rect().get_center()
@@ -188,13 +175,15 @@ func click_control(item: Control) -> void:
 		Input.parse_input_event(event)
 		await process_frame
 
+
 func press_text(part: String) -> void:
+	var localized_part := game.localize(part)
 	for item in buttons(game):
-		if part in item.text and not item.disabled:
+		if localized_part in item.text and not item.disabled:
 			await click_control(item)
 			await settle()
 			return
-	check(false, "Missing button: " + part)
+	check(false, "Missing button: " + localized_part)
 
 func press_key(keycode: Key) -> void:
 	var event := InputEventKey.new()
@@ -255,7 +244,7 @@ func spider_translation_checks() -> void:
 
 func menu_layout_checks() -> void:
 	var content_bottom: float = game.content.get_global_rect().end.y
-	check(content_bottom <= root.size.y - 24, "Menu fits viewport: %s %s (bottom %.1f, limit %d)" % [root.size, game.language, content_bottom, root.size.y - 24])
+	check(content_bottom <= root.size.y - 24, "Menu fits viewport: %s (bottom %.1f, limit %d)" % [root.size, content_bottom, root.size.y - 24])
 	for build in Catalog.LOADOUTS:
 		var choice := named("Build_" + build)
 		var copy := choice.get_child(0).get_child(0)
@@ -276,11 +265,10 @@ func check_starting_deck() -> void:
 		check(item.inspection_mode, "Deck cards are inspection-only")
 	check(found == counts.size(), "Dialog shows every unique starting card")
 
+
 func menu_flow() -> void:
 	root.content_scale_size = Vector2i.ZERO
 	root.size = Vector2i(1280, 720)
-	game.language = "zh"
-	game.build_matcher()
 	game.render()
 	await settle()
 	check(game.selected_loadout == "balanced", "Balanced build is selected by default")
@@ -351,33 +339,28 @@ func menu_flow() -> void:
 	game.run.abandon()
 	# Capture default, longest-copy build, expanded seed, and deck dialog at native sizes.
 	for dimensions in [Vector2i(1280, 720), Vector2i(1440, 900)]:
-		for locale in ["zh", "en"]:
-			root.size = dimensions
-			game.language = locale
-			game.build_matcher()
-			game.selected_loadout = "balanced"
-			game.menu_seed_expanded = false
-			game.render()
-			await settle()
-			menu_layout_checks()
-			await snapshot("menu-%d-%s" % [dimensions.x, locale])
-			await click_control(named("Build_nectar"))
-			await settle()
-			menu_layout_checks()
-			await snapshot("menu-nectar-%d-%s" % [dimensions.x, locale])
-			await click_control(named("SeedDisclosure"))
-			await settle()
-			menu_layout_checks()
-			await snapshot("menu-seed-%d-%s" % [dimensions.x, locale])
-			await click_control(named("StartingDeck"))
-			await settle()
-			check_starting_deck()
-			check_card_bounds()
-			await snapshot("menu-deck-%d-%s" % [dimensions.x, locale])
-			await press_key(KEY_ESCAPE)
-			await settle()
-	game.language = "en"
-	game.build_matcher()
+		root.size = dimensions
+		game.selected_loadout = "balanced"
+		game.menu_seed_expanded = false
+		game.render()
+		await settle()
+		menu_layout_checks()
+		await snapshot("menu-%d-zh" % dimensions.x)
+		await click_control(named("Build_nectar"))
+		await settle()
+		menu_layout_checks()
+		await snapshot("menu-nectar-%d-zh" % dimensions.x)
+		await click_control(named("SeedDisclosure"))
+		await settle()
+		menu_layout_checks()
+		await snapshot("menu-seed-%d-zh" % dimensions.x)
+		await click_control(named("StartingDeck"))
+		await settle()
+		check_starting_deck()
+		check_card_bounds()
+		await snapshot("menu-deck-%d-zh" % dimensions.x)
+		await press_key(KEY_ESCAPE)
+		await settle()
 	game.selected_loadout = "balanced"
 	game.menu_seed_text = "BUG-404-LOL"
 	game.menu_seed_expanded = true
@@ -403,7 +386,7 @@ func _run() -> void:
 		game = load("res://scenes/main.tscn").instantiate()
 		root.add_child(game)
 		for dimensions in [Vector2i(1280, 720), Vector2i(1440, 900)]:
-			for locale in ["en", "zh"]: await combat_matrix_capture(dimensions, locale)
+			await combat_matrix_capture(dimensions)
 		if "--states" in OS.get_cmdline_user_args(): await combat_states_capture()
 		print("BUGBOUND COMBAT: %d failures" % failures)
 		quit(1 if failures else 0)
@@ -411,11 +394,8 @@ func _run() -> void:
 	root.size = Vector2i(1440, 900)
 	game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
-	check(game.language == "zh", "Chinese is the player-facing default language")
-	check(buttons(game).all(func(item): return item.text != "中文 / EN"), "Language switch is hidden")
-	game.language = "en"
-	game.build_matcher()
-	game.render()
+	check(buttons(game).any(func(item): return item.text == game.localize("Card Library")), "Chinese UI is active by default")
+	check(buttons(game).all(func(item): return item.text != "中文 / EN"), "Language switch is removed")
 	await menu_flow()
 	game.render()
 	await snapshot("menu")
@@ -458,8 +438,6 @@ func _run() -> void:
 	game.collection(true)
 	await snapshot("library")
 	check_card_bounds()
-	game.language = "zh"
-	game.build_matcher()
 	game.run.start("CHINESE-UI")
 	game.run.enter("t0l0")
 	await snapshot("battle-zh")
@@ -467,13 +445,9 @@ func _run() -> void:
 	await settle()
 	check_card_bounds()
 	game.run.abandon()
-	await combat_matrix_capture(Vector2i(1280, 720), "en")
+	await combat_matrix_capture(Vector2i(1280, 720))
 	game.run.abandon()
-	await combat_matrix_capture(Vector2i(1280, 720), "zh")
-	game.run.abandon()
-	await combat_matrix_capture(Vector2i(1440, 900), "en")
-	game.run.abandon()
-	await combat_matrix_capture(Vector2i(1440, 900), "zh")
+	await combat_matrix_capture(Vector2i(1440, 900))
 	await combat_states_capture()
 	await experience_flow()
 	game.run.abandon()

@@ -29,7 +29,7 @@ Optimize for the total tokens needed to complete the request correctly, includin
 - Use shared Themes, Containers, and reusable components so typography, spacing, and interaction states stay consistent across screens.
 - Preserve the established art identity and gameplay balance unless the request explicitly changes them.
 - Refine the representative screen against the references before expanding its reusable components to other screens.
-- Validate at 1280x720 and 1440x900 in English and Chinese, checking clipping, readability, and layout stability.
+- Validate at 1280x720 and 1440x900 in Chinese, checking clipping, readability, and layout stability.
 - Assess the first-run journey: next actions, costs, targets, consequences, disabled-state explanations, feedback, recovery paths, and keyboard focus.
 - Use repeatable seeds and scenes with real input flows; record screenshots, state, and logs so findings are reproducible.
 - Separate observed defects from hypotheses that require human playtesting.

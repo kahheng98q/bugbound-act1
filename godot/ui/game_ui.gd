@@ -23,7 +23,7 @@ const CORAL := Color("ee8c77")
 var run := RunState.new()
 var content: VBoxContainer
 var overlay: Control
-var language := "zh"
+# Source copy stays in English internally; player-facing output is always Chinese.
 var phrases: Array = JSON.parse_string(FileAccess.get_file_as_string("res://data/translations.json"))
 var matcher := RegEx.new()
 var translations := {}
@@ -136,8 +136,8 @@ func build_matcher() -> void:
 	var ui_phrases: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/ui_translations.json"))
 	for english in ui_phrases: all_phrases.append([english, ui_phrases[english]])
 	for pair in all_phrases:
-		var key: String = pair[0] if language == "zh" else pair[1]
-		translations[key] = pair[1] if language == "zh" else pair[0]
+		var key: String = pair[0]
+		translations[key] = pair[1]
 		if key not in keys: keys.append(key)
 	keys.sort_custom(func(a, b): return a.length() > b.length())
 	var patterns: Array[String] = []
