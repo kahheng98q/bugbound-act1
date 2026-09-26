@@ -188,7 +188,10 @@ func spider_rules() -> void:
 	b.bug = "memory"
 	b.energy = 3
 	b.breakpoint_armed = true
-	b.deck.append(Catalog.card("strike"))
+	var drawn_strike := Catalog.card("strike")
+	drawn_strike.id = b.run.serial
+	b.run.serial += 1
+	b.deck.append(drawn_strike)
 	var duck := give(b, "duck")
 	var hp_before := b.hp
 	b.play(duck.id)

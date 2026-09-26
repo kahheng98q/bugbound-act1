@@ -11,7 +11,8 @@ This folder is the native Godot 4.5 implementation of the Act 1 vertical slice. 
 - `scenes/main.tscn` / `scenes/card.tscn` — reusable scene entry points.
 
 The UI uses illustrated paper cards, a connected route map, health bars, a dedicated
-bug monitor, and centered dialogs. English and Chinese are available in the header.
+bug monitor, and centered dialogs. The player-facing UI currently uses Chinese;
+language switching is reserved for a future localization pass.
 The hand scrolls horizontally when it contains more cards than fit in the window.
 
 Combat shows incoming damage after current Block (including lethal warnings),

@@ -32,11 +32,11 @@ func _draw() -> void:
 	var body := Color("6f78a8")
 	var accent := Color("75cbb0")
 	var web := Color(0.75, 0.85, 0.88, 0.55)
-	for radius in [0.42, 0.31, 0.20]:
+	for radius: float in [0.42, 0.31, 0.20]:
 		for i in range(8):
 			var a := TAU * float(i) / 8.0
-			var p1 := center + Vector2(cos(a), sin(a)) * minf(size.x, size.y) * radius
-			var p2 := center + Vector2(cos(a + TAU / 8.0), sin(a + TAU / 8.0)) * minf(size.x, size.y) * radius
+			var p1: Vector2 = center + Vector2(cos(a), sin(a)) * minf(size.x, size.y) * radius
+			var p2: Vector2 = center + Vector2(cos(a + TAU / 8.0), sin(a + TAU / 8.0)) * minf(size.x, size.y) * radius
 			draw_line(p1, p2, web, 1.5)
 	for i in range(8):
 		var a := TAU * float(i) / 8.0

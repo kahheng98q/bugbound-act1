@@ -124,7 +124,7 @@ func unplayable_reason(card: Dictionary) -> String:
 	if card.key == "jelly":
 		if bee.nectar < 2:
 			return "Need 2 Nectar"
-		if not hand.any(func(other): return other.id != card.id and other.cost > 0):
+		if not hand.any(func(other): return other.get("id", -1) != card.get("id", -1) and other.cost > 0):
 			return "No eligible target"
 	if card.get("releaseCaptured", false) and web.is_empty():
 		return "Web is empty"
@@ -161,7 +161,7 @@ func can_play(card: Dictionary) -> bool:
 	return unplayable_reason(card).is_empty()
 
 func play(id: int) -> bool:
-	var found := hand.filter(func(card): return card.id == id)
+	var found := hand.filter(func(card): return card.get("id", -1) == id)
 	if found.is_empty() or not can_play(found[0]):
 		return false
 	var card: Dictionary = found[0]

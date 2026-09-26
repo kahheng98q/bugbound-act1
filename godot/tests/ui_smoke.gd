@@ -226,8 +226,36 @@ func menu_preview_checks(keys: Array) -> void:
 		check(item.get_node("Margin/Body/ArtFrame/Art").texture != null, "Preview uses card art")
 	check_card_bounds()
 
+func spider_translation_checks() -> void:
+	var ui_translations: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/ui_translations.json"))
+	var spider_copy := [
+		"Spider Debugger",
+		"Capture triggered Bugs in a 2-slot Web, then release them as commands.",
+		"Web Trap",
+		"Gain 5 Block. The next Bug you trigger fills your Web with two copies of it.",
+		"Inject",
+		"Deal 6 damage. If your Web holds a Bug, consume the oldest one and deal 8 extra damage.",
+		"Breakpoint",
+		"The next Bug you trigger ignores its Risk and is still captured. Exhaust.",
+		"Stack Overflow",
+		"Deal 7 damage per captured Bug, then clear your Web.",
+		"Release Candidate",
+		"Release the oldest captured Bug as a command. Its stored reward resolves again without its Risk.",
+		"WEB",
+		"Captured",
+		"empty",
+		"Triggered Bugs are captured in your 2-slot Web. Spider cards can consume or release them.",
+		"Web Trap armed",
+		"Breakpoint armed",
+		"Web is empty",
+		"WEB RELEASE",
+	]
+	for source in spider_copy:
+		check(ui_translations.has(source) and game.localize(source) == ui_translations[source], "Chinese Spider translation: " + source)
+
 func menu_layout_checks() -> void:
-	check(game.content.get_global_rect().end.y <= root.size.y - 24, "Menu fits viewport: %s %s" % [root.size, game.language])
+	var content_bottom: float = game.content.get_global_rect().end.y
+	check(content_bottom <= root.size.y - 24, "Menu fits viewport: %s %s (bottom %.1f, limit %d)" % [root.size, game.language, content_bottom, root.size.y - 24])
 	for build in Catalog.LOADOUTS:
 		var choice := named("Build_" + build)
 		var copy := choice.get_child(0).get_child(0)
@@ -259,6 +287,7 @@ func menu_flow() -> void:
 	check(game.menu_seed_text == "BUG-404-LOL", "Default seed")
 	check(not game.menu_seed_expanded and named("MenuSeed") == null and named("SeedLaunch") == null, "Seed controls start collapsed")
 	menu_layout_checks()
+	spider_translation_checks()
 	await snapshot("menu-first-zh")
 	# All selections use real pointer input; inspecting never mutates the current run.
 	game.run.start("MENU-PREVIEW-CHECK")
@@ -272,6 +301,7 @@ func menu_flow() -> void:
 		check(game.selected_loadout == build, "Build selection updates: " + build)
 		check(menu_button("Build_" + build).has_focus(), "Selected build restores focus")
 		menu_preview_checks(game.MENU_SIGNATURES[build])
+		if capture and build == "spider": await snapshot("menu-spider-1280-zh")
 		var preview := named("Signature_" + game.MENU_SIGNATURES[build][0])
 		await click_control(preview)
 		preview.grab_focus()
@@ -288,7 +318,9 @@ func menu_flow() -> void:
 		await press_key(KEY_ESCAPE)
 		await settle()
 		check(not is_instance_valid(game.overlay) and named("StartingDeck").has_focus(), "Escape restores deck opener focus")
-	# Real text input, then language and viewport rebuilds must preserve menu choices.
+	# Real text input and viewport rebuilds must preserve menu choices.
+	await click_control(menu_button("Build_overdrive"))
+	await settle()
 	await click_control(named("SeedDisclosure"))
 	await settle()
 	var seed_input := named("MenuSeed") as LineEdit
@@ -302,10 +334,9 @@ func menu_flow() -> void:
 		await process_frame
 	await settle()
 	check(game.menu_seed_text == "MENU-TEST-001", "Text input updates stored seed")
-	game.toggle_language()
 	root.size = Vector2i(1440, 900)
 	await settle()
-	check(game.selected_loadout == "overdrive" and game.menu_seed_expanded and named("MenuSeed").text == "MENU-TEST-001", "Language and resize retain menu state")
+	check(game.selected_loadout == "overdrive" and game.menu_seed_expanded and named("MenuSeed").text == "MENU-TEST-001", "Resize retains menu state")
 	await click_control(named("SeedLaunch"))
 	await settle()
 	check(game.run.screen == "map" and game.run.loadout_key == "overdrive" and game.run.rng.seed_text == "MENU-TEST-001", "Seed launch uses entered seed and build")
@@ -380,6 +411,8 @@ func _run() -> void:
 	root.size = Vector2i(1440, 900)
 	game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
+	check(game.language == "zh", "Chinese is the player-facing default language")
+	check(buttons(game).all(func(item): return item.text != "中文 / EN"), "Language switch is hidden")
 	game.language = "en"
 	game.build_matcher()
 	game.render()

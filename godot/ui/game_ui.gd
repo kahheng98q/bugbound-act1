@@ -21,7 +21,7 @@ const CORAL := Color("ee8c77")
 var run := RunState.new()
 var content: VBoxContainer
 var overlay: Control
-var language := "en"
+var language := "zh"
 var phrases: Array = JSON.parse_string(FileAccess.get_file_as_string("res://data/translations.json"))
 var matcher := RegEx.new()
 var translations := {}
@@ -45,9 +45,6 @@ const MENU_SIGNATURES := {
 
 func _ready() -> void:
 	mono.font_names = PackedStringArray(["Consolas", "DejaVu Sans Mono", "monospace"])
-	var config := ConfigFile.new()
-	if config.load("user://settings.cfg") == OK:
-		language = config.get_value("ui", "language", "en")
 	build_matcher()
 	theme = make_theme()
 	game_feel.settings = game_feel_settings
@@ -243,7 +240,6 @@ func render() -> void:
 	label(brand, "BUGBOUND_", 22 if run.screen in ["battle", "menu"] else 27, HONEY)
 	if run.screen != "battle": tag(brand, "A BUG IN THE SYSTEM", MINT)
 	button(header, "Card Library", func(): collection(true))
-	button(header, "中文 / EN", toggle_language)
 	if run.screen != "menu":
 		button(header, "Deck · %d" % run.cards.size(), func(): collection(false))
 		button(header, "Pause  /  Esc", pause_menu)
@@ -267,15 +263,6 @@ func render() -> void:
 	combat_feedback.after_render(run)
 	if menu_deck_open and run.screen == "menu": starting_deck()
 
-func toggle_language() -> void:
-	language = "zh" if language == "en" else "en"
-	build_matcher()
-	var config := ConfigFile.new()
-	config.load("user://settings.cfg")
-	config.set_value("ui", "language", language)
-	config.save("user://settings.cfg")
-	render()
-
 func dismiss_guidance() -> void:
 	guidance_dismissed = true
 	render()
@@ -292,8 +279,8 @@ func menu_screen() -> void:
 	var builds := GridContainer.new()
 	builds.columns = 2
 	builds.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	builds.add_theme_constant_override("h_separation", 10)
-	builds.add_theme_constant_override("v_separation", 10)
+	builds.add_theme_constant_override("h_separation", 8)
+	builds.add_theme_constant_override("v_separation", 6)
 	boot.add_child(builds)
 	for key in Catalog.LOADOUTS:
 		var choice := button(builds, "", func():
@@ -301,7 +288,7 @@ func menu_screen() -> void:
 			render()
 			find_child("Build_" + key, true, false).grab_focus())
 		choice.name = "Build_" + key
-		choice.custom_minimum_size = Vector2(0, 126)
+		choice.custom_minimum_size = Vector2(0, 97)
 		choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		choice.tooltip_text = localize(Catalog.LOADOUTS[key].hint)
 		if key == selected_loadout:
@@ -310,13 +297,13 @@ func menu_screen() -> void:
 			choice.add_theme_stylebox_override("normal", selected_style)
 		var inset := MarginContainer.new()
 		inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		for edge in ["left", "right", "top", "bottom"]: inset.add_theme_constant_override("margin_" + edge, 12)
+		for edge in ["left", "right", "top", "bottom"]: inset.add_theme_constant_override("margin_" + edge, 6)
 		choice.add_child(inset)
 		var copy := column(inset)
-		copy.add_theme_constant_override("separation", 5)
-		label(copy, ("✓ " if key == selected_loadout else "") + localize(Catalog.LOADOUTS[key].name), 20, HONEY if key == selected_loadout else TEXT)
-		label(copy, Catalog.LOADOUTS[key].hint, 16, Color("bdcdce"))
-		if key == "balanced": label(copy, "Recommended for first run", 16, MINT)
+		copy.add_theme_constant_override("separation", 2)
+		label(copy, ("✓ " if key == selected_loadout else "") + localize(Catalog.LOADOUTS[key].name), 17, HONEY if key == selected_loadout else TEXT)
+		label(copy, Catalog.LOADOUTS[key].hint, 13, Color("bdcdce"))
+		if key == "balanced": label(copy, "Recommended for first run", 12, MINT)
 		menu_ignore_mouse(inset)
 	button(boot, "Start Adventure  →", func(): run.start(Crypto.new().generate_random_bytes(8).hex_encode(), selected_loadout), false, true).name = "StartAdventure"
 	var disclosure := button(boot, ("▾ " if menu_seed_expanded else "▸ ") + localize("Seeded run"), func():
@@ -358,8 +345,9 @@ func menu_screen() -> void:
 		var view := menu_inspection_card(cards, key)
 		view.name = "Signature_" + key
 	button(preview, "View starting deck", starting_deck).name = "StartingDeck"
-	var journey := label(content, "Choose your path  →  Exploit the bugs  →  Face Antivirus", 16, Color("bdcdce"))
-	journey.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if not menu_seed_expanded:
+		var journey := label(content, "Choose your path  →  Exploit the bugs  →  Face Antivirus", 16, Color("bdcdce"))
+		journey.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 func menu_ignore_mouse(node: Control) -> void:
 	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
