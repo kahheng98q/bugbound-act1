@@ -83,8 +83,8 @@ func settle() -> void:
 		screen = "victory" if battle.enemy_key == "antivirus" else "reward"
 		if screen == "reward":
 			rewards = []
-			# Each offer supports a different strategy; the pools do not overlap.
-			for style in Catalog.REWARD_POOLS:
+			# Each offer supports a different strategy; Spider swaps Nectar for its Web pool.
+			for style in Catalog.reward_styles(loadout_key):
 				rewards.append(Catalog.card(rng.pick(Catalog.REWARD_POOLS[style])))
 	if screen != "battle":
 		battle.run = null
