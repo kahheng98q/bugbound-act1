@@ -854,7 +854,7 @@ func result_screen() -> void:
 	spacer(body, 20)
 	button(body, "RETURN TO RUN MENU  →", run.abandon, false, true)
 
-func modal(title_text: String, wide := false) -> VBoxContainer:
+func modal(title_text: String, wide := false, close_action: Callable = Callable()) -> VBoxContainer:
 	disable_background_focus(self)
 	if is_instance_valid(overlay):
 		remove_child(overlay)
@@ -871,7 +871,15 @@ func modal(title_text: String, wide := false) -> VBoxContainer:
 	frame.add_theme_stylebox_override("panel", box(SURFACE, Color("53645d"), 16, 28))
 	center.add_child(frame)
 	var shell := column(frame)
-	tag(shell, "BUGBOUND  /  SYSTEM WINDOW", HONEY)
+	var header := row(shell, 8)
+	tag(header, "BUGBOUND  /  SYSTEM WINDOW", HONEY)
+	if close_action.is_valid():
+		var close := button(header, "×", close_action)
+		close.name = "ModalClose"
+		close.tooltip_text = localize("Close")
+		close.custom_minimum_size = Vector2(44, 44)
+		close.add_theme_font_size_override("font_size", 24)
+		close.grab_focus()
 	label(shell, title_text, 29)
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size.y = 490 if wide else 340
@@ -896,8 +904,7 @@ func pause_menu() -> void:
 		button(confirm, "Cancel", pause_menu, false, true))
 
 func collection(library: bool) -> void:
-	var body := modal("Card Library" if library else "Current deck", true)
-	button(body, "Close", render).grab_focus()
+	var body := modal("Card Library" if library else "Current deck", true, render)
 	var grid := GridContainer.new()
 	grid.columns = 4
 	body.add_child(grid)
