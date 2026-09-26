@@ -268,7 +268,9 @@ func bug_consequences(ignore_risk := false) -> Dictionary:
 func capture_bug(key: String) -> void:
 	if not is_spider(): return
 	if web_trap:
-		web = [key, key]
+		web.clear()
+		web.append(key)
+		web.append(key)
 		web_trap = false
 		return
 	if web.size() >= 2: web.pop_front()
