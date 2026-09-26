@@ -139,7 +139,7 @@ func preview_card(card: Dictionary) -> Dictionary:
 		not deck.is_empty() or not discard.is_empty() or not card.get("exhausted", false))
 	effects.nectar_spent = bee.nectar if card.key == "swarm" else (2 if card.key == "jelly" else 0)
 	effects.captured_spent = web.size() if card.get("consumeAllCaptured", false) else (1 if card.get("consumeCaptured", false) and not web.is_empty() else 0)
-	effects.bug_consequences = bug_consequences() if effects.triggers_bug else empty_bug_consequences()
+	effects.bug_consequences = bug_consequences(is_spider() and breakpoint_armed) if effects.triggers_bug else empty_bug_consequences()
 	var projected_debt: int = debt + effects.bug_consequences.debt
 	var projected_bank: int = bee.bank
 	if card.key == "nectar":
