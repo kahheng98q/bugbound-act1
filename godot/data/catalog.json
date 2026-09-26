@@ -251,6 +251,56 @@
       "artSlot": 5,
       "code": "chain(attack)",
       "description": "Deal 4 damage, plus 3 per Attack already played this turn."
+    },
+    {
+      "key": "web_trap",
+      "name": "Web Trap",
+      "cost": 1,
+      "kind": "skill",
+      "code": "web.capture(next)",
+      "description": "Gain 5 Block. The next Bug you trigger gains +1 capture capacity for that trigger.",
+      "block": 5,
+      "webTrap": true
+    },
+    {
+      "key": "inject",
+      "name": "Inject",
+      "cost": 1,
+      "kind": "attack",
+      "code": "inject(captured_bug)",
+      "description": "Deal 6 damage. If your Web holds a Bug, consume the oldest one and deal 8 extra damage.",
+      "damage": 6,
+      "consumeCaptured": true,
+      "capturedBonusDamage": 8
+    },
+    {
+      "key": "breakpoint",
+      "name": "Breakpoint",
+      "cost": 0,
+      "kind": "skill",
+      "code": "breakpoint(risk)",
+      "description": "The next Bug you trigger ignores its Risk and is still captured. Exhaust.",
+      "breakpoint": true,
+      "exhausted": true
+    },
+    {
+      "key": "stack_overflow",
+      "name": "Stack Overflow",
+      "cost": 2,
+      "kind": "attack",
+      "code": "web.flush()",
+      "description": "Deal 7 damage per captured Bug, then clear your Web.",
+      "consumeAllCaptured": true,
+      "capturedDamage": 7
+    },
+    {
+      "key": "release_candidate",
+      "name": "Release Candidate",
+      "cost": 1,
+      "kind": "skill",
+      "code": "release(web)",
+      "description": "Release the oldest captured Bug as a command. Its stored reward resolves again without its Risk.",
+      "releaseCaptured": true
     }
   ],
   "enemies": {
