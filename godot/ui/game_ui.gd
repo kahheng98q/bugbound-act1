@@ -6,6 +6,7 @@ const ROUTE_DETAILS = preload("res://ui/route_details.gd")
 const PAPER_SHADER = preload("res://ui/paper_cutout.gdshader")
 const FEEDBACK = preload("res://ui/combat_feedback.gd")
 const BEE_PORTRAIT = preload("res://ui/bee_portrait.gd")
+const SPIDER_PORTRAIT = preload("res://ui/spider_portrait.gd")
 @export var game_feel_settings: GameFeelSettings = preload("res://ui/default_game_feel.tres")
 var game_feel := GameFeel.new()
 var combat_feedback := FEEDBACK.new()
@@ -39,6 +40,7 @@ var preview_card_id := -1
 const MENU_SIGNATURES := {
 	"balanced": ["strike", "hotfix"], "nectar": ["forage", "lance"],
 	"fortress": ["patch", "bash"], "overdrive": ["thread", "trace"],
+	"spider": ["web_trap", "inject"],
 }
 
 func _ready() -> void:
@@ -342,9 +344,9 @@ func menu_screen() -> void:
 	preview.add_theme_constant_override("separation", 6)
 	label(preview, "STARTUP / BUILD PREVIEW", 16, MINT)
 	var player := row(preview, 12)
-	var bee := portrait(player, "player", 64)
-	bee.custom_minimum_size.x = 84
-	bee.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var player_portrait := portrait(player, "spider" if selected_loadout == "spider" else "player", 64)
+	player_portrait.custom_minimum_size.x = 84
+	player_portrait.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var details := column(player)
 	details.add_theme_constant_override("separation", 4)
 	label(details, Catalog.LOADOUTS[selected_loadout].name, 28)
@@ -462,6 +464,13 @@ func map_screen() -> void:
 	if run.flags.daemonDraw or run.flags.printerDebt: tag(build, "BACKGROUND PROCESS PENDING", CORAL)
 
 func portrait(parent: Node, key: String, height := 140) -> TextureRect:
+	if key == "spider":
+		var spider: TextureRect = SPIDER_PORTRAIT.new()
+		spider.custom_minimum_size = Vector2(height, height)
+		spider.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		spider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		parent.add_child(spider)
+		return spider
 	var sheet: Texture2D = load("res://assets/bee-rewards.png" if key == "player" else "res://assets/bugbound-characters.png")
 	var index: int = ["player", "folder", "cursor", "trash", "frozen", "memoryHog", "antivirus"].find(key)
 	if key != "player" and Catalog.data.enemies[key].has("artSlot"):
@@ -535,12 +544,12 @@ func battle_screen() -> void:
 	player_slot.custom_minimum_size = Vector2.ONE * (72 if compact else 140)
 	player_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	player_row.add_child(player_slot)
-	combat_feedback.player = portrait(player_slot, "player", int(player_slot.custom_minimum_size.x))
+	combat_feedback.player = portrait(player_slot, "spider" if run.loadout_key == "spider" else "player", int(player_slot.custom_minimum_size.x))
 	combat_feedback.player.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var player_stats := column(player_row)
 	player_stats.add_theme_constant_override("separation", 6)
 	player_stats.alignment = BoxContainer.ALIGNMENT_CENTER
-	label(player_stats, "Bee Programmer", 22)
+	label(player_stats, "Spider Debugger" if run.loadout_key == "spider" else "Bee Programmer", 22)
 	health(player_stats, b.hp, run.max_hp, MINT, "HP", b.block)
 	var enemy_row := row(enemy_side)
 	combat_feedback.enemy = portrait(enemy_row, b.enemy_key, 72 if compact else 140)
@@ -590,25 +599,45 @@ func battle_screen() -> void:
 	var energy := panel(bee_bar, Color("24473f"), MINT, 8)
 	energy.get_parent().size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	label(energy, "%d ENERGY" % b.energy, 22, TEXT).autowrap_mode = TextServer.AUTOWRAP_OFF
-	var nectar_group := column(bee_bar)
-	nectar_group.add_theme_constant_override("separation", 0)
-	var nectar := label(nectar_group, "NECTAR %d" % b.bee.nectar, 16, HONEY)
-	nectar.autowrap_mode = TextServer.AUTOWRAP_OFF
-	nectar.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var states: Array[String] = []
-	if b.bee.compiling: states.append("Compiler %d/6" % b.bee.comb)
-	if b.bee.pollen: states.append("Pollen: " + ("collect next effect" if b.bee.pollen == 2 else "pass to next card"))
-	if b.bee.guard: states.append("Retaliation %d" % b.bee.guard)
-	var nectar_help := label(nectar_group, "First attack: +1 Nectar available" if b.attacks == 0 else "First attack: Nectar collected", 16, TEXT)
-	nectar_help.name = "CombatHint"
-	nectar_help.custom_minimum_size.y = 20
-	var nectar_explanation := localize("Nectar lasts this battle. It strengthens Nectar Lance and Wax Wall. Swarm Loop spends it for damage; Royal Jelly spends 2 to reduce another card's cost.")
-	nectar.tooltip_text = nectar_explanation
-	nectar_help.tooltip_text = nectar_explanation
-	nectar.focus_mode = Control.FOCUS_ALL
-	nectar.mouse_filter = Control.MOUSE_FILTER_STOP
-	nectar.focus_entered.connect(func(): show_combat_help(nectar_explanation))
-	nectar.focus_exited.connect(clear_combat_help)
+	if run.loadout_key == "spider":
+		var web_group := column(bee_bar)
+		web_group.add_theme_constant_override("separation", 0)
+		var captured_names: Array[String] = []
+		for key in b.web: captured_names.append(localize(Catalog.data.bugs[key].name))
+		var web_label := label(web_group, "WEB %d / 2" % b.web.size(), 16, HONEY)
+		web_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		var web_help := label(web_group, "Captured: " + ("empty" if captured_names.is_empty() else " · ".join(captured_names)), 16, TEXT)
+		web_help.name = "CombatHint"
+		web_help.custom_minimum_size.y = 20
+		var web_explanation := localize("Triggered Bugs are captured in your 2-slot Web. Spider cards can consume or release them.")
+		for node in [web_label, web_help]:
+			node.tooltip_text = web_explanation
+			node.focus_mode = Control.FOCUS_ALL
+			node.mouse_filter = Control.MOUSE_FILTER_STOP
+			node.focus_entered.connect(func(): show_combat_help(web_explanation))
+			node.focus_exited.connect(clear_combat_help)
+		if b.web_trap: states.append("Web Trap armed")
+		if b.breakpoint_armed: states.append("Breakpoint armed")
+	else:
+		var nectar_group := column(bee_bar)
+		nectar_group.add_theme_constant_override("separation", 0)
+		var nectar := label(nectar_group, "NECTAR %d" % b.bee.nectar, 16, HONEY)
+		nectar.autowrap_mode = TextServer.AUTOWRAP_OFF
+		nectar.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		if b.bee.compiling: states.append("Compiler %d/6" % b.bee.comb)
+		if b.bee.pollen: states.append("Pollen: " + ("collect next effect" if b.bee.pollen == 2 else "pass to next card"))
+		if b.bee.guard: states.append("Retaliation %d" % b.bee.guard)
+		var nectar_help := label(nectar_group, "First attack: +1 Nectar available" if b.attacks == 0 else "First attack: Nectar collected", 16, TEXT)
+		nectar_help.name = "CombatHint"
+		nectar_help.custom_minimum_size.y = 20
+		var nectar_explanation := localize("Nectar lasts this battle. It strengthens Nectar Lance and Wax Wall. Swarm Loop spends it for damage; Royal Jelly spends 2 to reduce another card's cost.")
+		nectar.tooltip_text = nectar_explanation
+		nectar_help.tooltip_text = nectar_explanation
+		nectar.focus_mode = Control.FOCUS_ALL
+		nectar.mouse_filter = Control.MOUSE_FILTER_STOP
+		nectar.focus_entered.connect(func(): show_combat_help(nectar_explanation))
+		nectar.focus_exited.connect(clear_combat_help)
 	var next_energy := label(bee_bar, localize("Next turn: %d Energy") % b.next_turn_energy(), 16, HONEY)
 	next_energy.name = "NextTurnEnergy"
 	next_energy.tooltip_text = localize("Base 3 · Debt -%d · Cached +%d") % [b.debt, b.bee.bank]
