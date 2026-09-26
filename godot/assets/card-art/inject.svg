@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="256" viewBox="0 0 512 256">
+<rect width="512" height="256" fill="#f3ead8"/>
+<g stroke="#f04d45" stroke-width="8" opacity=".9"><path d="M310 30L294 72M382 42L350 78M444 88L396 104M448 166L398 154M384 214L352 178M302 226L296 184"/></g>
+<g transform="translate(292 135)">
+<circle r="44" fill="#111c2c" stroke="#081018" stroke-width="7"/><circle cy="-42" r="28" fill="#111c2c" stroke="#081018" stroke-width="7"/>
+<g stroke="#081018" stroke-width="8" stroke-linecap="round"><path d="M-30 -14L-68 -40M30 -14L68 -40M-34 4L-78 0M34 4L78 0M-28 28L-66 58M28 28L66 58"/></g>
+<path d="M-18 -50L-4 -38L-20 -28Z" fill="#ff4f4f"/><path d="M18 -50L4 -38L20 -28Z" fill="#ff4f4f"/>
+</g>
+<g transform="translate(60 24) rotate(24)">
+<rect x="0" y="0" width="170" height="54" rx="15" fill="#b7d7d6" stroke="#10222b" stroke-width="7"/>
+<rect x="78" y="9" width="72" height="36" rx="6" fill="#ff5d57"/><path d="M170 27h64" stroke="#10222b" stroke-width="9"/><path d="M234 27l28 -10v20z" fill="#10222b"/>
+<path d="M26 12v30M48 12v30" stroke="#10222b" stroke-width="6"/>
+</g></svg>
