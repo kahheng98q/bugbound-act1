@@ -241,7 +241,7 @@ func render() -> void:
 	if run.screen != "battle": tag(brand, "A BUG IN THE SYSTEM", MINT)
 	button(header, "Card Library", func(): collection(true))
 	if run.screen != "menu":
-		button(header, "Deck · %d" % run.cards.size(), func(): collection(false))
+		button(header, "Deck · %d  [D]" % run.cards.size(), func(): collection(false))
 		button(header, "Pause  /  Esc", pause_menu)
 		if run.screen != "battle":
 			var bar := row(content, 24)
@@ -636,8 +636,8 @@ func battle_screen() -> void:
 	var piles := tag(tools, "HAND %d  ·  DRAW %d  ·  DISCARD %d" % [b.hand.size(), b.deck.size(), b.discard.size()], MUTED)
 	piles.autowrap_mode = TextServer.AUTOWRAP_OFF
 	button(tools, "Battle log", show_log)
-	button(bee_bar, "END TURN  ↵", end_turn, b.popup_open or not b.choice.is_empty(), true)
-	preview_label = label(content, "Hover or focus a card to preview its effects.", 16, TEXT)
+	button(bee_bar, "END TURN  [E]", end_turn, b.popup_open or not b.choice.is_empty(), true)
+	preview_label = label(content, "1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map", 16, TEXT)
 	preview_label.name = "CardPreview"
 	preview_label.custom_minimum_size.y = 56
 	preview_label.theme_type_variation = "CombatRule"
@@ -656,8 +656,21 @@ func battle_screen() -> void:
 	hand_scroll.add_child(hand_margin)
 	var cards := row(hand_margin)
 	cards.alignment = BoxContainer.ALIGNMENT_CENTER
-	for card in b.hand:
+	for i in range(b.hand.size()):
+		var card: Dictionary = b.hand[i]
 		var view = card_view(cards, card, play_card.bind(int(card.id)), not b.can_play(card))
+		if i < 10:
+			var shortcut_badge := Label.new()
+			shortcut_badge.text = "[%s]" % str((i + 1) % 10)
+			shortcut_badge.add_theme_font_override("font", mono)
+			shortcut_badge.add_theme_font_size_override("font_size", 13)
+			shortcut_badge.add_theme_color_override("font_color", HONEY)
+			shortcut_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			shortcut_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var top_row := view.get_node("Margin/Body/Top")
+			top_row.add_child(shortcut_badge)
+			top_row.move_child(shortcut_badge, 1)
+			view.tooltip_text = "[%s]  " % str((i + 1) % 10) + view.tooltip_text
 		combat_feedback.cards[int(card.id)] = view
 		view.custom_minimum_size = Vector2(222, 256 if compact else 302)
 		view.art_height = 94.0 if compact else 126.0
@@ -713,7 +726,7 @@ func clear_combat_help() -> void:
 	preview_card_id = -1
 	var trigger := find_child("BugTrigger", true, false) as Label
 	if trigger: trigger.add_theme_color_override("font_color", TEXT)
-	show_combat_help(localize("Hover or focus a card to preview its effects."))
+	show_combat_help(localize("1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map"))
 
 func clear_card_preview(id: int, view: Control) -> void:
 	if view.has_focus(): return
@@ -896,7 +909,58 @@ func collection(library: bool) -> void:
 	var grid := GridContainer.new()
 	grid.columns = 4
 	body.add_child(grid)
-	for card in (Catalog.data.cards if library else run.cards): card_view(grid, card, func(): pass)
+	for card in (Catalog.data.cards if library else run.cards): card_view(grid, card, func(): pass, false, true)
+
+func show_card_pile(title_text: String, cards: Array) -> void:
+	if run.screen != "battle" or run.battle == null: return
+	var body := modal(title_text, true, render)
+	if cards.is_empty():
+		label(body, "No cards here.", 20, MUTED)
+		return
+	var grid := GridContainer.new()
+	grid.columns = 4
+	body.add_child(grid)
+	for card in cards: card_view(grid, card, func(): pass, false, true)
+
+func show_route_preview() -> void:
+	if run.screen == "menu": return
+	var body := modal("Route preview  [M]", true, render)
+	tag(body, "ACT 1  /  DESKTOP", MINT)
+	label(body, "Current path %02d / 11" % mini(11, run.tier + 1), 18, HONEY)
+	for tier in range(11):
+		var nodes: Array = run.map.filter(func(node): return int(node.tier) == tier and (node.kind != "secret" or run.flags.secretUnlocked))
+		if nodes.is_empty(): continue
+		var line := row(body, 10)
+		var path_tag := tag(line, "PATH %02d" % (tier + 1), HONEY if tier == run.tier else MUTED)
+		path_tag.custom_minimum_size.x = 92
+		var names: Array[String] = []
+		for node in nodes:
+			var marker := " ✓" if node.id in run.completed else (" ←" if tier == run.tier else "")
+			names.append(localize(ROUTE_DETAILS.title_text(node)) + marker)
+		label(line, "  /  ".join(names), 16, TEXT if tier >= run.tier else MUTED)
+
+func focus_hand_shortcut(index: int) -> void:
+	if run.screen != "battle" or run.battle == null or is_instance_valid(overlay): return
+	if index < 0 or index >= run.battle.hand.size(): return
+	var card: Dictionary = run.battle.hand[index]
+	show_card_preview(card)
+	var view = combat_feedback.cards.get(int(card.id))
+	if is_instance_valid(view) and not view.disabled:
+		view.grab_focus()
+
+func hand_shortcut_index(keycode: Key) -> int:
+	match keycode:
+		KEY_1: return 0
+		KEY_2: return 1
+		KEY_3: return 2
+		KEY_4: return 3
+		KEY_5: return 4
+		KEY_6: return 5
+		KEY_7: return 6
+		KEY_8: return 7
+		KEY_9: return 8
+		KEY_0: return 9
+		_: return -1
 
 func show_log() -> void:
 	var body := modal("Battle log")
@@ -911,4 +975,31 @@ func _unhandled_key_input(event: InputEvent) -> void:
 				if menu_deck_open: close_starting_deck()
 				else: render()
 			elif run.screen != "menu": pause_menu()
-		elif event.keycode == KEY_ENTER and run.screen == "battle" and not is_instance_valid(overlay): end_turn()
+			return
+		if is_instance_valid(overlay): return
+		var hand_index := hand_shortcut_index(event.keycode)
+		if hand_index >= 0 and run.screen == "battle":
+			focus_hand_shortcut(hand_index)
+			get_viewport().set_input_as_handled()
+			return
+		match event.keycode:
+			KEY_E:
+				if run.screen == "battle":
+					end_turn()
+					get_viewport().set_input_as_handled()
+			KEY_D:
+				if run.screen != "menu":
+					collection(false)
+					get_viewport().set_input_as_handled()
+			KEY_A:
+				if run.screen == "battle":
+					show_card_pile("Draw pile  [A]", run.battle.deck)
+					get_viewport().set_input_as_handled()
+			KEY_S:
+				if run.screen == "battle":
+					show_card_pile("Discard pile  [S]", run.battle.discard)
+					get_viewport().set_input_as_handled()
+			KEY_M:
+				if run.screen != "menu":
+					show_route_preview()
+					get_viewport().set_input_as_handled()
