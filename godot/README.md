@@ -21,6 +21,20 @@ explain spending it. The first battle includes guidance that can be dismissed
 for the rest of the session. Route nodes show encounter traits and clarify
 matching encounters. Installing or skipping a reward confirms the choice on the map.
 
+The combat action bar groups current Energy, Nectar availability, and next-turn
+Energy with its debt/cache breakdown. The header identifies route progress,
+encounter type, and starting build. The bug monitor explains Trigger / Gain / Cost
+and replacement on trigger. Hovering or focusing a card fills a reserved preview
+area with known effects and bug consequences; unavailable cards remain focusable
+to explain their requirements. Focusing Nectar opens its detailed help there.
+Random draws and replacement bugs are never predicted or sampled by previews.
+
+Focused keyboard, pointer, preview, and long-hand checks:
+
+```powershell
+.\run-godot.ps1 --headless --path godot --script res://tests/test_combat_clarity.gd
+```
+
 Combat rules resolve immediately; the previous arena remains visible until its
 defeat and bug effects finish, then reward content appears without overlapping
 combat effects. Navigation or rebuilding the screen cancels that presentation.
@@ -49,7 +63,7 @@ the completed bug while its replacement is already active in the rules.
 
 The bee uses `assets/bee-animation.png`, a transparent 4×4 sprite sheet: eight
 idle frames with wing/eye/limb changes and eight attack frames. `ui/bee_portrait.gd`
-plays idle at 6.25 FPS and attacks at 13.33 FPS, then returns to idle. The image
+plays idle at 5 FPS and attacks at 10 FPS, then returns to idle. The image
 slot stays fixed. Animation phase survives battle UI rebuilds without consuming RNG.
 
 ```gdscript

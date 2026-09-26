@@ -69,7 +69,7 @@ func bee_frames() -> void:
 	bee._process(0.3)
 	bee.attack()
 	check(bee.frame_index == 8, "Rapid attacks restart from wind-up")
-	bee._process(0.7)
+	bee._process(8 * bee.ATTACK_FRAME_SECONDS + 0.1)
 	check(bee.frame_index < 8, "Attack completion resumes idle frames")
 	bee.free()
 
@@ -218,12 +218,12 @@ func ui_integration() -> void:
 	await settle(0.10)
 	check(game.combat_feedback.player.frame_index >= 8, "Attack artwork plays after the UI rebuild")
 	await screenshot("card-flight")
-	await settle(0.22)
+	await settle(game.game_feel.settings.anticipation_duration + game.game_feel.settings.play_duration)
 	await screenshot("enemy-damage")
 	await settle(0.7)
 	check(game.combat_feedback.player.frame_index < 8 and game.combat_feedback.player.attack_time < 0.0, "Bee returns to idle artwork after attacking")
 	check(state(game.run) == state(expected), "Finishing effects never changes gameplay or RNG")
-	var hp_before_enemy := game.run.battle.hp
+	var hp_before_enemy: int = game.run.battle.hp
 	game.end_turn()
 	expected.end_turn()
 	check(state(game.run) == state(expected), "Enemy attack presentation does not change end-turn rules or RNG")
@@ -243,7 +243,23 @@ func ui_integration() -> void:
 		# A second real click can arrive while the first flight is still running.
 		await process_frame
 		await process_frame
-	await settle(0.34)
+	# A seeded opening hand need not complete its random bug. Arrange a known
+	# completion so the readability assertion actually observes a monitor effect.
+	await settle(1.0)
+	var trigger: Dictionary = Catalog.card("strike")
+	trigger.id = 9000
+	for fixture in [game.run, expected]:
+		fixture.battle.bug = "hotPath"
+		fixture.battle.progress = 1
+		fixture.battle.energy = 10
+		fixture.battle.enemy_hp = 1000
+		fixture.battle.hand.append(trigger.duplicate(true))
+	game.render()
+	await settle()
+	game.play_card(trigger.id)
+	expected.play(trigger.id)
+	check(game.run.bugs_triggered == expected.bugs_triggered, "Known monitor trigger matches direct rules")
+	await settle(game.game_feel.settings.anticipation_duration + game.game_feel.settings.play_duration + 0.05)
 	var completion: Array = game.game_feel.effects_root.get_children().filter(func(node): return node is Label and node.text == "BUG COMPLETE!")
 	check(completion.size() == 1 and completion[0].modulate.a > 0.5, "Monitor completion text remains readable after impact")
 	await screenshot("monitor-completion")
@@ -274,6 +290,27 @@ func ui_integration() -> void:
 	game.run.abandon()
 	await settle(1.0)
 	check(game.run.screen == "menu" and game.game_feel.effects_root.get_child_count() == 0, "Navigation cancels pending effects without stale callbacks")
+	game.run.start("BUG-404-LOL")
+	game.run.enter("t0l0")
+	await settle()
+	game.play_card(game.run.battle.hand[0].id)
+	await settle(game.game_feel.settings.anticipation_duration + game.game_feel.settings.play_duration + 0.1)
+	var block_popups: Array = game.game_feel.effects_root.get_children().filter(func(node): return node is Label and node.text == "+6 BLOCK")
+	check(game.run.battle.block == 6 and block_popups.size() == 1, "Playing defense displays the actual Block gain")
+	await screenshot("block-gain")
+	await settle(1.3)
+	game.run.battle.intent.damage = 4
+	game.render()
+	await settle()
+	var guarded_hp: int = game.run.battle.hp
+	game.end_turn()
+	await settle(game.game_feel.settings.enemy_attack_windup_duration + game.game_feel.settings.enemy_attack_launch_duration + 0.1)
+	var absorbed_popups: Array = game.game_feel.effects_root.get_children().filter(func(node): return node is Label and node.text == "BLOCKED 4")
+	check(game.run.battle.hp == guarded_hp and absorbed_popups.size() == 1, "Fully guarded attack displays the amount absorbed without HP loss")
+	await screenshot("block-absorb")
+	await settle(1.3)
+	check(game.game_feel.effects_root.get_child_count() == 0, "Block effects clean up after a guarded attack")
+	game.run.abandon()
 	if expected.battle: expected.battle.run = null
 	game.queue_free()
 	await process_frame

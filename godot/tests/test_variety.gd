@@ -19,13 +19,13 @@ func map_signature(nodes: Array) -> String:
 		result += "%s:%s:%s:%s|" % [node.id, node.kind, node.get("enemy", node.get("event", "")), node.get("anomaly", false)]
 	return result
 
-func fresh(enemy := "folder") -> RunState:
+func fresh(enemy := "folder", preserve_enemy_hp := false) -> RunState:
 	var run := RunState.new()
 	run.start("VARIETY", "balanced")
 	run.current = {"id": "test"}
 	run.screen = "battle"
 	run.battle = Combat.new(run, enemy)
-	run.battle.enemy_hp = 1000
+	if not preserve_enemy_hp: run.battle.enemy_hp = 1000
 	run.battle.deck.clear()
 	run.battle.hand.clear()
 	run.battle.discard.clear()
@@ -107,7 +107,7 @@ func card_scaling_and_nectar() -> void:
 	dispose(run)
 
 func enemy_rules() -> void:
-	var run := fresh("sentinel")
+	var run := fresh("sentinel", true)
 	var battle := run.battle
 	check(battle.enemy_hp == 42 and battle.intent.damage == 6 and battle.intent.block == 8, "Sentinel opens with its odd-turn intent")
 	var calls := run.rng.calls
@@ -122,7 +122,7 @@ func enemy_rules() -> void:
 	battle.play(wax.id)
 	check(battle.enemy_shield == 5, "Skills strip two Sentinel Block before their effects")
 	dispose(run)
-	run = fresh("wasp")
+	run = fresh("wasp", true)
 	battle = run.battle
 	check(battle.enemy_hp == 38 and battle.intent.damage == 4, "Wasp opens with its regular sting")
 	battle.turn = 2
@@ -135,7 +135,8 @@ func enemy_rules() -> void:
 
 func map_and_rewards() -> void:
 	var seen := {}
-	for seed in ["ROUTE-%d" % i for i in range(24)]:
+	for i in range(24):
+		var seed := "ROUTE-%d" % i
 		var map := MapGenerator.generate(SeededRng.new(seed))
 		var replay := MapGenerator.generate(SeededRng.new(seed))
 		check(map_signature(map) == map_signature(replay), "Expanded encounter map is reproducible: " + seed)

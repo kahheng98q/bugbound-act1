@@ -101,12 +101,42 @@ func bug_matches(card: Dictionary, gained_block: int, energy_after_spend: int, h
 		"loop": return progress + 1 >= 3
 	return false
 
+func next_turn_energy() -> int:
+	return maxi(0, 3 - debt) + bee.bank
+
+func unplayable_reason(card: Dictionary) -> String:
+	if hp <= 0 or enemy_hp <= 0:
+		return "Battle ended"
+	if popup_open or not choice.is_empty():
+		return "Resolve the current choice first"
+	if card.cost > energy:
+		return "Not enough energy"
+	if card.key == "jelly":
+		if bee.nectar < 2:
+			return "Need 2 Nectar"
+		if not hand.any(func(other): return other.id != card.id and other.cost > 0):
+			return "No eligible target"
+	return ""
+
 func preview_card(card: Dictionary) -> Dictionary:
 	# Read-only: shares rule calculations and never draws cards or advances RNG.
 	var effects := card_effects(card)
-	effects.triggers_bug = can_play(card) and bug_matches(card, effects.block, energy - card.cost,
+	var reason := unplayable_reason(card)
+	effects.unplayable_reason = reason
+	effects.triggers_bug = reason.is_empty() and bug_matches(card, effects.block, energy - card.cost,
 		not deck.is_empty() or not discard.is_empty() or not card.get("exhausted", false))
 	effects.nectar_spent = bee.nectar if card.key == "swarm" else (2 if card.key == "jelly" else 0)
+	effects.bug_consequences = bug_consequences() if effects.triggers_bug else empty_bug_consequences()
+	var projected_debt: int = debt + effects.bug_consequences.debt
+	var projected_bank: int = bee.bank
+	if card.key == "nectar":
+		projected_bank += energy - card.cost
+	effects.next_turn_debt = projected_debt
+	effects.next_turn_bank = projected_bank
+	effects.next_turn_energy = maxi(0, 3 - projected_debt) + projected_bank
+	if bee.compiling and bee.comb == 5:
+		var first: Dictionary = bee.first
+		effects.compiler_consequences = {"damage": first.get("damage", 0), "block": first.get("block", 0), "draw": first.get("draw", 0), "hp_loss": 0, "heal": first.get("heal", 0)}
 	return effects
 
 func damage_enemy(amount: int) -> void:
@@ -115,11 +145,7 @@ func damage_enemy(amount: int) -> void:
 	enemy_hp = maxi(0, enemy_hp - amount + absorbed)
 
 func can_play(card: Dictionary) -> bool:
-	if popup_open or not choice.is_empty() or hp <= 0 or enemy_hp <= 0 or card.cost > energy:
-		return false
-	if card.key == "jelly":
-		return bee.nectar >= 2 and hand.any(func(other): return other.id != card.id and other.cost > 0)
-	return true
+	return unplayable_reason(card).is_empty()
 
 func play(id: int) -> bool:
 	var found := hand.filter(func(card): return card.id == id)
@@ -191,28 +217,44 @@ func play(id: int) -> bool:
 	if triggered: trigger_bug()
 	return true
 
-func trigger_bug() -> void:
-	var old_bug := bug
+func empty_bug_consequences() -> Dictionary:
+	return {"damage": 0, "block": 0, "draw": 0, "energy": 0, "hp_loss": 0, "debt": 0, "enemy_strength": 0}
+
+func bug_consequences() -> Dictionary:
+	var consequences := empty_bug_consequences()
 	match bug:
 		"overflow":
-			draw(2)
-			energy += 1
-			strength += 1
+			consequences.draw = 2
+			consequences.energy = 1
+			consequences.enemy_strength = 1
 		"memory":
-			draw(2)
-			hp = maxi(0, hp - 2)
+			consequences.draw = 2
+			consequences.hp_loss = 2
 		"hotPath":
-			damage_enemy(6)
-			hp = maxi(0, hp - 2)
+			consequences.damage = 6
+			consequences.hp_loss = 2
 		"firewall":
-			block += 8
-			debt += 1
+			consequences.block = 8
+			consequences.debt = 1
 		"loop":
-			energy += 2
-			hp = maxi(0, hp - 3)
+			consequences.energy = 2
+			consequences.hp_loss = 3
+	if enemy_key == "memoryHog" and (triggers + 1) % 2 == 0:
+		consequences.enemy_strength += 2
+	return consequences
+
+func trigger_bug() -> void:
+	var old_bug := bug
+	var consequences := bug_consequences()
+	damage_enemy(consequences.damage)
+	block += consequences.block
+	draw(consequences.draw)
+	energy += consequences.energy
+	hp = maxi(0, hp - consequences.hp_loss)
+	debt += consequences.debt
+	strength += consequences.enemy_strength
 	triggers += 1
 	if enemy_key == "frozen": enemy_shield += 3
-	if enemy_key == "memoryHog" and triggers % 2 == 0: strength += 2
 	if enemy_key == "antivirus": threat = mini(6, threat + 1)
 	bug = run.rng.pick(Catalog.BUG_KEYS.filter(func(key): return key != old_bug))
 	progress = 0
@@ -233,7 +275,7 @@ func end_turn() -> bool:
 	hand = []
 	block = 0
 	turn += 1
-	energy = maxi(0, 3 - debt) + bee.bank
+	energy = next_turn_energy()
 	bee.bank = 0
 	debt = 0
 	attacks = 0

@@ -19,7 +19,7 @@ func map_topology_signature(nodes: Array) -> String:
 	var result := ""
 	for node in nodes:
 		# Encounters after tier 3 may expand, but route kind, event/anomaly rolls, and node ids stay seeded.
-		result += "%s:%s:%s|" % [node.id, node.kind, node.get("event", ""), node.get("anomaly", false)]
+		result += "%s:%s:%s:%s|" % [node.id, node.kind, node.get("event", ""), node.get("anomaly", false)]
 	return result
 
 func _initialize() -> void:
@@ -39,7 +39,7 @@ func seed_parity() -> void:
 		rng = SeededRng.new(fixture.seed)
 		var map := MapGenerator.generate(rng)
 		var legacy_early := map.filter(func(node): return node.tier < 3)
-		var generated_early := fixture.map.nodes.filter(func(node): return node.tier < 3)
+		var generated_early: Array = fixture.map.nodes.filter(func(node): return node.tier < 3)
 		check(map_signature(legacy_early) == map_signature(generated_early), "JavaScript early-map identity parity: " + fixture.seed)
 		check(map_topology_signature(map) == map_topology_signature(fixture.map.nodes), "JavaScript map topology parity after encounter expansion: " + fixture.seed)
 		check(rng.calls == fixture.map.rng.calls and rng.state == fixture.map.rng.state, "Map RNG cursor parity")

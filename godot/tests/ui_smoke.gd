@@ -196,12 +196,176 @@ func press_text(part: String) -> void:
 			return
 	check(false, "Missing button: " + part)
 
+func press_key(keycode: Key) -> void:
+	var event := InputEventKey.new()
+	event.keycode = keycode
+	event.pressed = true
+	Input.parse_input_event(event)
+	await process_frame
+
+func named(name_: String) -> Control:
+	return game.find_child(name_, true, false) as Control
+
+func menu_button(name_: String) -> Button:
+	var item := named(name_)
+	check(item is Button, "Menu control exists: " + name_)
+	return item as Button
+
+func menu_preview_checks(keys: Array) -> void:
+	for key in keys:
+		var item := named("Signature_" + key)
+		check(item != null, "Preview exists: " + key)
+		if not item: continue
+		var card := Catalog.card(key)
+		check(item.get_meta("card_key") == key, "Preview card key: " + key)
+		check(item.inspection_mode and not item.disabled, "Preview is focusable inspection: " + key)
+		check(not item.get_node("Margin/Body/LockNotice").visible, "Inspection has no requirements warning")
+		check(item.get_node("Margin/Body/Name").text == game.localize(card.name), "Preview name matches catalog")
+		check(item.get_node("Margin/Body/Effect").text == game.localize(Catalog.describe(card)), "Preview rules match catalog")
+		check(item.get_node("Margin/Body/Top/Cost/Value").text == str(int(card.cost)), "Preview cost matches catalog")
+		check(item.get_node("Margin/Body/ArtFrame/Art").texture != null, "Preview uses card art")
+	check_card_bounds()
+
+func menu_layout_checks() -> void:
+	check(game.content.get_global_rect().end.y <= root.size.y - 24, "Menu fits viewport: %s %s" % [root.size, game.language])
+	for build in Catalog.LOADOUTS:
+		var choice := named("Build_" + build)
+		var copy := choice.get_child(0).get_child(0)
+		for child in copy.get_children():
+			check(choice.get_global_rect().encloses(child.get_global_rect()), "Build text fits: " + build)
+	menu_preview_checks(game.MENU_SIGNATURES[game.selected_loadout])
+
+func check_starting_deck() -> void:
+	var counts := {}
+	for key in Catalog.LOADOUTS[game.selected_loadout].cards: counts[key] = counts.get(key, 0) + 1
+	var found := 0
+	for item in buttons(game.overlay):
+		if not item.has_meta("card_key"): continue
+		found += 1
+		var key: String = item.get_meta("card_key")
+		check(counts.has(key), "Deck dialog only includes starting cards")
+		check(item.get_meta("copy_count") == counts.get(key, 0), "Deck duplicate count matches catalog")
+		check(item.inspection_mode, "Deck cards are inspection-only")
+	check(found == counts.size(), "Dialog shows every unique starting card")
+
+func menu_flow() -> void:
+	root.content_scale_size = Vector2i.ZERO
+	root.size = Vector2i(1280, 720)
+	game.language = "zh"
+	game.build_matcher()
+	game.render()
+	await settle()
+	check(game.selected_loadout == "balanced", "Balanced build is selected by default")
+	check(game.menu_seed_text == "BUG-404-LOL", "Default seed")
+	check(not game.menu_seed_expanded and named("MenuSeed") == null and named("SeedLaunch") == null, "Seed controls start collapsed")
+	menu_layout_checks()
+	await snapshot("menu-first-zh")
+	# All selections use real pointer input; inspecting never mutates the current run.
+	game.run.start("MENU-PREVIEW-CHECK")
+	game.run.abandon()
+	await settle()
+	var rng_calls: int = game.run.rng.calls
+	var saved_cards: String = JSON.stringify(game.run.cards)
+	for build in Catalog.LOADOUTS:
+		await click_control(menu_button("Build_" + build))
+		await settle()
+		check(game.selected_loadout == build, "Build selection updates: " + build)
+		check(menu_button("Build_" + build).has_focus(), "Selected build restores focus")
+		menu_preview_checks(game.MENU_SIGNATURES[build])
+		var preview := named("Signature_" + game.MENU_SIGNATURES[build][0])
+		await click_control(preview)
+		preview.grab_focus()
+		await press_key(KEY_ENTER)
+		check(game.run.screen == "menu" and game.run.rng.calls == rng_calls and JSON.stringify(game.run.cards) == saved_cards, "Preview leaves run and RNG untouched")
+		await click_control(named("StartingDeck"))
+		await settle()
+		check_starting_deck()
+		await click_control(named("CloseStartingDeck"))
+		await settle()
+		check(not is_instance_valid(game.overlay) and named("StartingDeck").has_focus(), "Close restores deck opener focus")
+		await click_control(named("StartingDeck"))
+		await settle()
+		await press_key(KEY_ESCAPE)
+		await settle()
+		check(not is_instance_valid(game.overlay) and named("StartingDeck").has_focus(), "Escape restores deck opener focus")
+	# Real text input, then language and viewport rebuilds must preserve menu choices.
+	await click_control(named("SeedDisclosure"))
+	await settle()
+	var seed_input := named("MenuSeed") as LineEdit
+	seed_input.grab_focus()
+	seed_input.select_all()
+	for character in "MENU-TEST-001":
+		var typed := InputEventKey.new()
+		typed.unicode = character.unicode_at(0)
+		typed.pressed = true
+		Input.parse_input_event(typed)
+		await process_frame
+	await settle()
+	check(game.menu_seed_text == "MENU-TEST-001", "Text input updates stored seed")
+	game.toggle_language()
+	root.size = Vector2i(1440, 900)
+	await settle()
+	check(game.selected_loadout == "overdrive" and game.menu_seed_expanded and named("MenuSeed").text == "MENU-TEST-001", "Language and resize retain menu state")
+	await click_control(named("SeedLaunch"))
+	await settle()
+	check(game.run.screen == "map" and game.run.loadout_key == "overdrive" and game.run.rng.seed_text == "MENU-TEST-001", "Seed launch uses entered seed and build")
+	var actual: Array = []
+	for card in game.run.cards: actual.append(card.key)
+	check(actual == Catalog.LOADOUTS.overdrive.cards, "Seeded launch uses complete selected deck")
+	game.run.abandon()
+	await settle()
+	await click_control(named("StartAdventure"))
+	await settle()
+	check(game.run.screen == "map" and game.run.loadout_key == "overdrive" and game.run.rng.seed_text != "MENU-TEST-001", "Random launch uses selected build and fresh seed")
+	game.run.abandon()
+	# Capture default, longest-copy build, expanded seed, and deck dialog at native sizes.
+	for dimensions in [Vector2i(1280, 720), Vector2i(1440, 900)]:
+		for locale in ["zh", "en"]:
+			root.size = dimensions
+			game.language = locale
+			game.build_matcher()
+			game.selected_loadout = "balanced"
+			game.menu_seed_expanded = false
+			game.render()
+			await settle()
+			menu_layout_checks()
+			await snapshot("menu-%d-%s" % [dimensions.x, locale])
+			await click_control(named("Build_nectar"))
+			await settle()
+			menu_layout_checks()
+			await snapshot("menu-nectar-%d-%s" % [dimensions.x, locale])
+			await click_control(named("SeedDisclosure"))
+			await settle()
+			menu_layout_checks()
+			await snapshot("menu-seed-%d-%s" % [dimensions.x, locale])
+			await click_control(named("StartingDeck"))
+			await settle()
+			check_starting_deck()
+			check_card_bounds()
+			await snapshot("menu-deck-%d-%s" % [dimensions.x, locale])
+			await press_key(KEY_ESCAPE)
+			await settle()
+	game.language = "en"
+	game.build_matcher()
+	game.selected_loadout = "balanced"
+	game.menu_seed_text = "BUG-404-LOL"
+	game.menu_seed_expanded = true
+	game.render()
+	await settle()
+
 func _run() -> void:
 	if "--experience-only" in OS.get_cmdline_user_args():
 		game = load("res://scenes/main.tscn").instantiate()
 		root.add_child(game)
 		await experience_flow()
 		print("BUGBOUND EXPERIENCE UI: %d failures" % failures)
+		quit(1 if failures else 0)
+		return
+	if "--menu-only" in OS.get_cmdline_user_args():
+		game = load("res://scenes/main.tscn").instantiate()
+		root.add_child(game)
+		await menu_flow()
+		print("BUGBOUND MENU: %d failures" % failures)
 		quit(1 if failures else 0)
 		return
 	if "--combat-only" in OS.get_cmdline_user_args():
@@ -218,6 +382,8 @@ func _run() -> void:
 	root.add_child(game)
 	game.language = "en"
 	game.build_matcher()
+	game.render()
+	await menu_flow()
 	game.render()
 	await snapshot("menu")
 	await press_text("BOOT →")

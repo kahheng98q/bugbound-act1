@@ -11,6 +11,8 @@ var completion_text := "BUG COMPLETE!"
 var _battle: Combat
 var _enemy_hp := 0
 var _player_hp := 0
+var _player_block := 0
+var _absorbed := 0
 var _triggers := 0
 var _epoch := 0
 var _flight: Control
@@ -38,6 +40,7 @@ func prepare_enemy_attack() -> void:
 	_enemy_attack_visual = feel.snapshot(enemy)
 	_enemy_attack_target = player.get_global_rect().get_center()
 	_enemy_attack_armed = is_instance_valid(_enemy_attack_visual)
+	_absorbed = mini(_battle.block, _battle.intent_damage()) if _battle != null else 0
 
 
 func before_render(run: RunState) -> void:
@@ -66,6 +69,8 @@ func before_render(run: RunState) -> void:
 			"epoch": _epoch, "battle_id": _battle.get_instance_id(),
 			"damage": maxi(0, _enemy_hp - _battle.enemy_hp),
 			"player_damage": maxi(0, _player_hp - _battle.hp),
+			"block_gain": maxi(0, _battle.block - _player_block) if not _enemy_attack_armed else 0,
+			"absorbed": _absorbed if _enemy_attack_armed else 0,
 			"dead": _enemy_hp > 0 and _battle.enemy_hp <= 0,
 			"enemy_attack": _enemy_attack_armed,
 			"enemy_attack_visual": _enemy_attack_visual,
@@ -107,6 +112,7 @@ func after_render(run: RunState) -> void:
 	if _battle != null:
 		_enemy_hp = _battle.enemy_hp
 		_player_hp = _battle.hp
+		_player_block = _battle.block
 		_triggers = _battle.triggers
 	var batch := _pending
 	_pending = {}
@@ -146,9 +152,11 @@ func _present(batch: Dictionary) -> void:
 	elif batch.damage > 0 and same_battle and is_instance_valid(enemy):
 		feel.enemy_damage(enemy, batch.damage)
 	if batch.get("enemy_attack", false) and is_instance_valid(batch.get("enemy_attack_visual")):
-		feel.enemy_attack(batch.enemy_attack_visual, batch.enemy_attack_target, batch.player_damage, screen, player)
+		feel.enemy_attack(batch.enemy_attack_visual, batch.enemy_attack_target, batch.player_damage, screen, player, batch.absorbed, screen.localize("BLOCKED"))
 	elif batch.player_damage > 0:
 		feel.screen_shake(screen)
+	if batch.block_gain > 0 and same_battle and is_instance_valid(player):
+		feel.block_feedback(player.get_global_rect().get_center(), screen.localize("+%d BLOCK") % batch.block_gain)
 	if is_instance_valid(batch.get("monitor")):
 		var copy: Control = batch.monitor
 		copy.show()

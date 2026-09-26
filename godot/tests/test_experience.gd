@@ -37,6 +37,7 @@ func dispose(run: RunState) -> void:
 func _initialize() -> void:
 	preview_matches_resolution()
 	preview_effects()
+	preview_turn_and_bug_consequences()
 	preview_is_read_only()
 	incoming_damage_rules()
 	print("BUGBOUND EXPERIENCE: %d checks, %d failures" % [checks, failures])
@@ -137,6 +138,58 @@ func preview_effects() -> void:
 	strike = give(b, "strike")
 	check(not b.preview_card(strike).triggers_bug, "Unaffordable cards do not preview bug triggers")
 	dispose(run)
+
+func preview_turn_and_bug_consequences() -> void:
+	var run := fresh()
+	var b := run.battle
+	b.debt = 5
+	b.bee.bank = 4
+	check(b.next_turn_energy() == 4, "Next-turn Energy floors stacked debt before adding banked Energy")
+	b.debt = 0
+	b.bee.bank = 2
+	b.energy = 3
+	var nectar := give(b, "nectar")
+	var preview := b.preview_card(nectar)
+	check(preview.next_turn_bank == 5 and preview.next_turn_debt == 0 and preview.next_turn_energy == 8, "Nectar preview banks current Energy for the next turn")
+	dispose(run)
+	run = fresh()
+	b = run.battle
+	b.bug = "firewall"
+	b.energy = 1
+	var guard := give(b, "guard")
+	preview = b.preview_card(guard)
+	check(preview.next_turn_bank == 0 and preview.next_turn_debt == 1 and preview.next_turn_energy == 2, "Bug debt reduces projected next-turn Energy")
+	dispose(run)
+
+	var cases := [
+		{"bug": "overflow", "damage": 0, "block": 0, "draw": 2, "energy": 1, "hp_loss": 0, "debt": 0, "enemy_strength": 1},
+		{"bug": "memory", "damage": 0, "block": 0, "draw": 2, "energy": 0, "hp_loss": 2, "debt": 0, "enemy_strength": 0},
+		{"bug": "hotPath", "damage": 6, "block": 0, "draw": 0, "energy": 0, "hp_loss": 2, "debt": 0, "enemy_strength": 0},
+		{"bug": "firewall", "damage": 0, "block": 8, "draw": 0, "energy": 0, "hp_loss": 0, "debt": 1, "enemy_strength": 0},
+		{"bug": "loop", "damage": 0, "block": 0, "draw": 0, "energy": 2, "hp_loss": 3, "debt": 0, "enemy_strength": 0},
+	]
+	for expected in cases:
+		run = fresh()
+		b = run.battle
+		b.bug = expected.bug
+		b.hp = 20
+		b.energy = 3
+		b.enemy_hp = 100
+		b.deck.append(Catalog.card("strike"))
+		var consequences := b.bug_consequences()
+		var expected_consequences: Dictionary = expected.duplicate()
+		expected_consequences.erase("bug")
+		check(consequences == expected_consequences, "Bug consequence schema matches " + expected.bug)
+		var hp_before := b.hp
+		var enemy_hp_before := b.enemy_hp
+		var block_before := b.block
+		var energy_before := b.energy
+		var debt_before := b.debt
+		var strength_before := b.strength
+		b.trigger_bug()
+		check(enemy_hp_before - b.enemy_hp == expected.damage and b.block - block_before == expected.block and b.energy - energy_before == expected.energy and hp_before - b.hp == expected.hp_loss and b.debt - debt_before == expected.debt and b.strength - strength_before == expected.enemy_strength, "Bug resolution matches preview consequences: " + expected.bug)
+		check(b.triggers == 1 and b.bug != expected.bug, "Bug resolution records and mutates " + expected.bug)
+		dispose(run)
 
 func preview_is_read_only() -> void:
 	var run := fresh()

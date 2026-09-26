@@ -106,7 +106,7 @@ func card_play(card: Control, target_position: Vector2, on_impact: Callable = Ca
 	return tween
 
 
-func enemy_attack(attacker: Control, target_position: Vector2, damage_amount: int, screen_target: Control = null, hit_target: Control = null) -> Tween:
+func enemy_attack(attacker: Control, target_position: Vector2, damage_amount: int, screen_target: Control = null, hit_target: Control = null, absorbed := 0, blocked_text := "BLOCKED") -> Tween:
 	if not is_instance_valid(attacker): return null
 	_ensure_layer()
 	_center_pivot(attacker)
@@ -128,13 +128,16 @@ func enemy_attack(attacker: Control, target_position: Vector2, damage_amount: in
 	tween.tween_property(attacker, "position", _center_target(attacker, impact_center), _duration(settings.enemy_attack_launch_duration))
 	tween.parallel().tween_property(attacker, "scale", origin_scale * 0.94, _duration(settings.enemy_attack_launch_duration))
 	tween.tween_callback(func():
-		_impact_burst(target_position, Color("ff5c6c"))
-		_system_flash(Color("ff5c6c"), settings.enemy_attack_flash_duration)
+		var hit_color := Color("75cbb0") if damage_amount == 0 else Color("ff5c6c")
+		_impact_burst(target_position, hit_color)
+		_system_flash(hit_color, settings.enemy_attack_flash_duration)
 		if is_instance_valid(screen_target):
 			screen_shake(screen_target, settings.enemy_attack_shake_intensity, settings.shake_duration)
 		if is_instance_valid(hit_target):
-			_flash(hit_target, Color(1.45, 0.72, 0.72, 1.0), settings.enemy_attack_flash_duration)
-		var message := "-%d" % damage_amount if damage_amount > 0 else "BLOCKED"
+			_flash(hit_target, Color(0.8, 1.5, 1.25, 1.0) if damage_amount == 0 else Color(1.45, 0.72, 0.72, 1.0), settings.enemy_attack_flash_duration)
+		if absorbed > 0: block_feedback(target_position + Vector2(0, 40), "%s %d" % [blocked_text, absorbed])
+		var message := "-%d" % damage_amount if damage_amount > 0 else blocked_text
+		if absorbed > 0 and damage_amount == 0: return
 		var popup := _text_popup(message, target_position - Vector2(28, 42))
 		popup.add_theme_font_size_override("font_size", 28)
 		popup.add_theme_color_override("font_color", Color("ff8b94") if damage_amount > 0 else Color("75cbb0"))
@@ -148,6 +151,23 @@ func enemy_attack(attacker: Control, target_position: Vector2, damage_amount: in
 	tween.tween_callback(func():
 		if is_instance_valid(attacker): attacker.queue_free())
 	return tween
+
+
+func block_feedback(at: Vector2, message: String) -> void:
+	_ensure_layer()
+	_impact_burst(at, Color("75cbb0"))
+	var popup := _text_popup(message, at - Vector2(36, 30))
+	popup.add_theme_font_size_override("font_size", 24)
+	popup.add_theme_color_override("font_color", Color("102126"))
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("75cbb0")
+	style.set_corner_radius_all(8)
+	style.content_margin_left = 10
+	style.content_margin_right = 10
+	style.content_margin_top = 5
+	style.content_margin_bottom = 5
+	popup.add_theme_stylebox_override("normal", style)
+	_popup_motion(popup, settings.damage_popup_duration * 1.25)
 
 
 func enemy_damage(actor: Control, amount: int, on_finished: Callable = Callable()) -> Tween:

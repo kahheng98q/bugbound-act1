@@ -5,6 +5,7 @@ const CORAL := Color("dd725e")
 const TEAL := Color("60b69b")
 const AMBER := Color("e7b94c")
 var _locked := false
+var inspection_mode := false
 var art_height := 104.0
 var game_feel: Node
 var hover_area: Control
@@ -46,16 +47,18 @@ func _fit_art() -> void:
 	# Preserve full rules text; long effects borrow space from the illustration.
 	var art := $Margin/Body/ArtFrame
 	var text_height: float = $Margin/Body.get_combined_minimum_size().y - art.custom_minimum_size.y
-	var available := maxf(32, size.y - 18 - text_height)
+	var available := maxf(24, size.y - 18 - text_height)
 	var target := minf(art_height, available)
 	if absf(art.custom_minimum_size.y - target) > 0.5:
 		art.custom_minimum_size.y = target
 
-func configure(card: Dictionary, localize: Callable, action: Callable, locked: bool) -> void:
+func configure(card: Dictionary, localize: Callable, action: Callable, locked: bool, inspect := false) -> void:
+	inspection_mode = inspect
+	locked = locked and not inspect
 	_locked = locked
 	disabled = locked
 	mouse_default_cursor_shape = Control.CURSOR_ARROW if locked else Control.CURSOR_POINTING_HAND
-	if not pressed.is_connected(action): pressed.connect(action)
+	if not inspect and not pressed.is_connected(action): pressed.connect(action)
 	tooltip_text = localize.call(Catalog.describe(card))
 	var kind := str(card.get("kind", "skill"))
 	var accent := AMBER if card.get("key", "") in Catalog.BEE or card.has("artSlot") else _accent_for(kind)
@@ -64,6 +67,9 @@ func configure(card: Dictionary, localize: Callable, action: Callable, locked: b
 	$Margin/Body/Top/Type.add_theme_color_override("font_color", accent.darkened(0.52))
 	$Margin/Body/Name.text = localize.call(str(card.get("name", "")))
 	$Margin/Body/Effect.text = localize.call(Catalog.describe(card))
+	$Margin/Body/Effect.add_theme_font_size_override("font_size", 16)
+	$Margin/Body/Top/Type.add_theme_font_size_override("font_size", 14)
+	$Margin/Body/LockNotice.add_theme_font_size_override("font_size", 14)
 	$Margin/Body/LockNotice.visible = locked
 	$Margin/Body/LockNotice.text = localize.call("REQUIREMENTS NOT MET")
 	$Margin/Body/ArtFrame.add_theme_stylebox_override("panel", _frame_style(accent))

@@ -1,8 +1,8 @@
 extends TextureRect
 ## Registered artwork frames: eight idle poses, then eight attack poses.
 const SHEET = preload("res://assets/bee-animation.png")
-const IDLE_FRAME_SECONDS := 0.16
-const ATTACK_FRAME_SECONDS := 0.075
+const IDLE_FRAME_SECONDS := 0.20
+const ATTACK_FRAME_SECONDS := 0.10
 var idle_time := 0.0
 var attack_time := -1.0
 var frame_index := -1
