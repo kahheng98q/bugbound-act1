@@ -26,6 +26,9 @@ var popup_resolved := false
 var choice: Dictionary = {}
 var log: Array[String] = []
 var bee := {"nectar": 0, "bank": 0, "pollen": 0, "damage": 0, "block": 0, "comb": 0, "compiling": false, "first": {}, "guard": 0}
+var web: Array[String] = []
+var web_trap := false
+var breakpoint_armed := false
 
 func _init(owner_run: RefCounted, key: String) -> void:
 	run = owner_run
@@ -76,9 +79,16 @@ func intent_damage() -> int:
 func incoming_damage() -> int:
 	return maxi(0, intent_damage() - block)
 
+func is_spider() -> bool:
+	return run.loadout_key == "spider"
+
 func card_effects(card: Dictionary) -> Dictionary:
 	var damage: int = 3 * (1 + bee.nectar) if card.key == "swarm" else card.get("damage", 0)
 	var gained_block: int = card.get("block", 0)
+	if card.get("consumeCaptured", false) and not web.is_empty():
+		damage += card.get("capturedBonusDamage", 0)
+	if card.get("consumeAllCaptured", false):
+		damage += card.get("capturedDamage", 0) * web.size()
 	match card.get("scaling", ""):
 		"nectar_damage": damage += 2 * bee.nectar
 		"nectar_block": gained_block += 2 * bee.nectar
@@ -116,6 +126,8 @@ func unplayable_reason(card: Dictionary) -> String:
 			return "Need 2 Nectar"
 		if not hand.any(func(other): return other.id != card.id and other.cost > 0):
 			return "No eligible target"
+	if card.get("releaseCaptured", false) and web.is_empty():
+		return "Web is empty"
 	return ""
 
 func preview_card(card: Dictionary) -> Dictionary:
@@ -126,7 +138,8 @@ func preview_card(card: Dictionary) -> Dictionary:
 	effects.triggers_bug = reason.is_empty() and bug_matches(card, effects.block, energy - card.cost,
 		not deck.is_empty() or not discard.is_empty() or not card.get("exhausted", false))
 	effects.nectar_spent = bee.nectar if card.key == "swarm" else (2 if card.key == "jelly" else 0)
-	effects.bug_consequences = bug_consequences() if effects.triggers_bug else empty_bug_consequences()
+	effects.captured_spent = web.size() if card.get("consumeAllCaptured", false) else (1 if card.get("consumeCaptured", false) and not web.is_empty() else 0)
+	effects.bug_consequences = bug_consequences(is_spider() and breakpoint_armed) if effects.triggers_bug else empty_bug_consequences()
 	var projected_debt: int = debt + effects.bug_consequences.debt
 	var projected_bank: int = bee.bank
 	if card.key == "nectar":
@@ -173,14 +186,19 @@ func play(id: int) -> bool:
 	energy += card.get("energy", 0)
 	draw(card.get("draw", 0))
 	if not card.get("exhausted", false) and card.key != "sting": discard.append(card)
+	if card.get("consumeCaptured", false) and not web.is_empty(): web.pop_front()
+	if card.get("consumeAllCaptured", false): web.clear()
+	if card.get("releaseCaptured", false) and not web.is_empty(): release_captured_bug(web.pop_front())
 	if card.key == "sting":
 		for i in range(run.cards.size()):
 			if run.cards[i].key == "sting":
 				run.cards.remove_at(i)
 				break
-	if card.kind == "attack" and attacks == 0: bee.nectar += 1
-	bee.nectar += card.get("nectarGain", 0)
+	if not is_spider() and card.kind == "attack" and attacks == 0: bee.nectar += 1
+	if not is_spider(): bee.nectar += card.get("nectarGain", 0)
 	match card.key:
+		"web_trap": web_trap = true
+		"breakpoint": breakpoint_armed = true
 		"nectar":
 			bee.bank += energy
 			energy = 0
@@ -220,7 +238,7 @@ func play(id: int) -> bool:
 func empty_bug_consequences() -> Dictionary:
 	return {"damage": 0, "block": 0, "draw": 0, "energy": 0, "hp_loss": 0, "debt": 0, "enemy_strength": 0}
 
-func bug_consequences() -> Dictionary:
+func bug_consequences(ignore_risk := false) -> Dictionary:
 	var consequences := empty_bug_consequences()
 	match bug:
 		"overflow":
@@ -239,13 +257,43 @@ func bug_consequences() -> Dictionary:
 		"loop":
 			consequences.energy = 2
 			consequences.hp_loss = 3
+	if ignore_risk:
+		consequences.hp_loss = 0
+		consequences.debt = 0
+		consequences.enemy_strength = 0
 	if enemy_key == "memoryHog" and (triggers + 1) % 2 == 0:
 		consequences.enemy_strength += 2
 	return consequences
 
+func capture_bug(key: String) -> void:
+	if not is_spider(): return
+	if web_trap:
+		web.clear()
+		web.append(key)
+		web.append(key)
+		web_trap = false
+		return
+	if web.size() >= 2: web.pop_front()
+	web.append(key)
+
+func apply_bug_reward(key: String) -> void:
+	match key:
+		"overflow":
+			draw(2)
+			energy += 1
+		"memory": draw(2)
+		"hotPath": damage_enemy(6)
+		"firewall": block += 8
+		"loop": energy += 2
+
+func release_captured_bug(key: String) -> void:
+	apply_bug_reward(key)
+	log.push_front("WEB RELEASE: " + Catalog.data.bugs[key].name)
+
 func trigger_bug() -> void:
 	var old_bug := bug
-	var consequences := bug_consequences()
+	var ignore_risk := is_spider() and breakpoint_armed
+	var consequences := bug_consequences(ignore_risk)
 	damage_enemy(consequences.damage)
 	block += consequences.block
 	draw(consequences.draw)
@@ -254,6 +302,8 @@ func trigger_bug() -> void:
 	debt += consequences.debt
 	strength += consequences.enemy_strength
 	triggers += 1
+	capture_bug(old_bug)
+	breakpoint_armed = false
 	if enemy_key == "frozen": enemy_shield += 3
 	if enemy_key == "antivirus": threat = mini(6, threat + 1)
 	bug = run.rng.pick(Catalog.BUG_KEYS.filter(func(key): return key != old_bug))

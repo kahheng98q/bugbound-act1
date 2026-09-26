@@ -51,15 +51,16 @@ func _initialize() -> void:
 	quit(1 if failures else 0)
 
 func catalog_and_loadouts() -> void:
-	var loadout_keys := ["balanced", "nectar", "fortress", "overdrive"]
-	check(Catalog.LOADOUTS.keys().size() == loadout_keys.size(), "Catalog exposes exactly the four loadouts")
+	var loadout_keys := ["balanced", "nectar", "fortress", "overdrive", "spider"]
+	check(Catalog.LOADOUTS.keys().size() == loadout_keys.size(), "Catalog exposes the expected loadouts")
 	for key in loadout_keys:
 		check(Catalog.LOADOUTS.has(key) and Catalog.LOADOUTS[key].cards.size() == 10, "Ten-card loadout: " + key)
 	check(Catalog.LOADOUTS.balanced.cards == Catalog.STARTER, "Balanced loadout preserves the original starter deck")
 	check("forage" in Catalog.LOADOUTS.nectar.cards and "lance" in Catalog.LOADOUTS.nectar.cards, "Nectar loadout starts its Nectar engine")
 	check("patch" in Catalog.LOADOUTS.fortress.cards and "bash" in Catalog.LOADOUTS.fortress.cards, "Fortress loadout starts its Block engine")
 	check("thread" in Catalog.LOADOUTS.overdrive.cards and "trace" in Catalog.LOADOUTS.overdrive.cards, "Overdrive loadout starts its attack chain")
-	for key in ["forage", "lance", "wax", "bash", "patch", "thread"]:
+	check("web_trap" in Catalog.LOADOUTS.spider.cards and "inject" in Catalog.LOADOUTS.spider.cards, "Spider loadout starts its Web engine")
+	for key in ["forage", "lance", "wax", "bash", "patch", "thread", "web_trap", "inject", "breakpoint", "stack_overflow", "release_candidate"]:
 		check(not Catalog.card(key).is_empty(), "Catalog contains " + key)
 	check(Catalog.card("forage").cost == 1 and Catalog.card("forage").kind == "skill" and Catalog.card("forage").block == 4 and Catalog.card("forage").nectarGain == 2, "Forage definition")
 	check(Catalog.card("lance").cost == 1 and Catalog.card("lance").damage == 5 and Catalog.card("lance").scaling == "nectar_damage", "Lance definition")
@@ -67,6 +68,8 @@ func catalog_and_loadouts() -> void:
 	check(Catalog.card("bash").cost == 1 and Catalog.card("bash").damage == 3 and Catalog.card("bash").scaling == "block_damage", "Bash definition")
 	check(Catalog.card("patch").cost == 0 and Catalog.card("patch").block == 3 and Catalog.card("patch").exhausted, "Patch definition")
 	check(Catalog.card("thread").cost == 1 and Catalog.card("thread").damage == 4 and Catalog.card("thread").scaling == "attacks_damage", "Thread definition")
+	check(Catalog.card("web_trap").cost == 1 and Catalog.card("web_trap").block == 5, "Web Trap definition")
+	check(Catalog.card("inject").cost == 1 and Catalog.card("inject").damage == 6, "Inject definition")
 	var run := RunState.new()
 	run.start("LOADOUT-SEED", "nectar")
 	check(run.loadout_key == "nectar" and card_keys(run.cards) == Catalog.LOADOUTS.nectar.cards, "Selected loadout resets the deck")
@@ -148,9 +151,10 @@ func map_and_rewards() -> void:
 	var expected_pools := {
 		"nectar": ["forage", "lance", "wax", "nectar", "swarm", "jelly"],
 		"fortress": ["bash", "patch", "guard", "cache", "rollback"],
-		"overdrive": ["thread", "pollen", "waggle", "comb", "sting", "trace"]
+		"overdrive": ["thread", "pollen", "waggle", "comb", "sting", "trace"],
+		"spider": ["web_trap", "inject", "breakpoint", "stack_overflow", "release_candidate"]
 	}
-	check(Catalog.REWARD_POOLS.keys().size() == expected_pools.size(), "Catalog exposes the three themed reward groups")
+	check(Catalog.REWARD_POOLS.keys().size() == expected_pools.size(), "Catalog exposes the themed reward groups")
 	for style in expected_pools:
 		check(Catalog.REWARD_POOLS[style] == expected_pools[style], "Reward group membership: " + style)
 	var first := RunState.new()
@@ -165,7 +169,15 @@ func map_and_rewards() -> void:
 		unique[key] = true
 		styles[Catalog.reward_style(key)] = true
 	check(rewards.size() == 3 and unique.size() == 3, "Reward offers three unique cards")
-	check(styles.size() == 3 and styles.has("nectar") and styles.has("fortress") and styles.has("overdrive"), "Reward offers one pick from each strategy group")
+	check(styles.size() == 3 and styles.has("nectar") and styles.has("fortress") and styles.has("overdrive"), "Bee reward offers one pick from each strategy group")
+	var spider := RunState.new()
+	spider.start("REWARD-GROUPS", "spider")
+	spider.enter("t0l0")
+	spider.battle.enemy_hp = 0
+	spider.settle()
+	var spider_styles := {}
+	for key in card_keys(spider.rewards): spider_styles[Catalog.reward_style(key)] = true
+	check(spider_styles.size() == 3 and spider_styles.has("spider") and spider_styles.has("fortress") and spider_styles.has("overdrive"), "Spider reward replaces Nectar with Web cards")
 	var replay := RunState.new()
 	replay.start("REWARD-GROUPS", "balanced")
 	replay.enter("t0l0")

@@ -10,12 +10,17 @@ const LOADOUTS := {
 	"nectar": {"name": "Nectar", "hint": "Grow Nectar, then turn it into damage and Block.", "cards": ["strike", "strike", "strike", "hotfix", "hotfix", "hotfix", "duck", "pair", "forage", "lance"]},
 	"fortress": {"name": "Fortress", "hint": "Build Block, then strike with your defenses.", "cards": ["strike", "strike", "strike", "hotfix", "hotfix", "hotfix", "duck", "pair", "patch", "bash"]},
 	"overdrive": {"name": "Overdrive", "hint": "Chain attacks to power up Threaded Strike.", "cards": ["strike", "strike", "strike", "hotfix", "hotfix", "hotfix", "duck", "pair", "thread", "trace"]},
+	"spider": {"name": "Spider Debugger", "hint": "Capture triggered Bugs in a 2-slot Web, then release them as commands.", "cards": ["strike", "strike", "strike", "hotfix", "hotfix", "hotfix", "duck", "pair", "web_trap", "inject"]},
 }
 const REWARD_POOLS := {
 	"nectar": ["forage", "lance", "wax", "nectar", "swarm", "jelly"],
 	"fortress": ["bash", "patch", "guard", "cache", "rollback"],
 	"overdrive": ["thread", "pollen", "waggle", "comb", "sting", "trace"],
+	"spider": ["web_trap", "inject", "breakpoint", "stack_overflow", "release_candidate"],
 }
+
+static func reward_styles(loadout_key: String) -> Array:
+	return ["spider", "fortress", "overdrive"] if loadout_key == "spider" else ["nectar", "fortress", "overdrive"]
 
 static func reward_style(key: String) -> String:
 	for style in REWARD_POOLS:

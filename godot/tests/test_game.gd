@@ -26,6 +26,7 @@ func _initialize() -> void:
 	seed_parity()
 	combat_rules()
 	bee_rules()
+	spider_rules()
 	run_flow()
 	print("BUGBOUND: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures else 0)
@@ -164,6 +165,53 @@ func bee_rules() -> void:
 	b.intent = {"damage": 10, "block": 0, "label": "hit"}
 	run.end_turn()
 	check(run.screen == "reward", "Hive retaliation can win a battle")
+	dispose(run)
+
+func spider_rules() -> void:
+	var run := RunState.new()
+	run.start("SPIDER-RULES", "spider")
+	run.current = {"id": "test"}
+	run.screen = "battle"
+	run.battle = Combat.new(run, "folder")
+	var b := run.battle
+	b.enemy_hp = 1000
+	b.deck.clear()
+	b.hand.clear()
+	b.discard.clear()
+	b.bug = "hotPath"
+	b.progress = 1
+	b.energy = 3
+	var strike := give(b, "strike")
+	b.play(strike.id)
+	check(b.triggers == 1 and b.web.size() == 1 and b.web[0] == "hotPath", "Spider captures a triggered Bug")
+	check(b.bee.nectar == 0, "Spider attacks do not generate Nectar")
+	b.bug = "memory"
+	b.energy = 3
+	b.breakpoint_armed = true
+	b.deck.append(Catalog.card("strike"))
+	var duck := give(b, "duck")
+	var hp_before := b.hp
+	b.play(duck.id)
+	check(b.hp == hp_before and b.web.size() == 2 and b.web[1] == "memory", "Breakpoint ignores Bug risk and still captures")
+	b.energy = 3
+	var enemy_before := b.enemy_hp
+	var inject := give(b, "inject")
+	b.play(inject.id)
+	check(enemy_before - b.enemy_hp == 14 and b.web.size() == 1, "Inject consumes one captured Bug for bonus damage")
+	b.energy = 3
+	b.bug = "firewall"
+	b.progress = 0
+	b.web = ["hotPath", "overflow"]
+	enemy_before = b.enemy_hp
+	var overflow := give(b, "stack_overflow")
+	b.play(overflow.id)
+	check(enemy_before - b.enemy_hp == 14 and b.web.is_empty(), "Stack Overflow converts the full Web into damage")
+	b.energy = 3
+	b.web = ["firewall"]
+	var block_before := b.block
+	var release := give(b, "release_candidate")
+	b.play(release.id)
+	check(b.block - block_before == 8 and b.web.is_empty(), "Release Candidate replays a captured Bug reward without risk")
 	dispose(run)
 
 func run_flow() -> void:
