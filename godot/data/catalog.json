@@ -258,7 +258,7 @@
       "cost": 1,
       "kind": "skill",
       "code": "web.capture(next)",
-      "description": "Gain 5 Block. The next Bug you trigger gains +1 capture capacity for that trigger.",
+      "description": "Gain 5 Block. The next Bug you trigger fills your Web with two copies of it.",
       "block": 5,
       "webTrap": true
     },
