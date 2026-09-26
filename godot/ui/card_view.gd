@@ -78,6 +78,20 @@ func configure(card: Dictionary, localize: Callable, action: Callable, locked: b
 	_apply_locked_state()
 
 func _set_art(card: Dictionary) -> void:
+	var custom_art := {
+		"web_trap": "res://assets/card-art/web-trap.svg",
+		"inject": "res://assets/card-art/inject.svg",
+		"breakpoint": "res://assets/card-art/breakpoint.svg",
+		"stack_overflow": "res://assets/card-art/stack-overflow.svg",
+		"release_candidate": "res://assets/card-art/release-candidate.svg",
+	}
+	var card_key := str(card.get("key", ""))
+	if custom_art.has(card_key):
+		$Margin/Body/ArtFrame/Art.texture = load(custom_art[card_key])
+		var custom_material := ShaderMaterial.new()
+		custom_material.shader = load("res://ui/paper_cutout.gdshader")
+		$Margin/Body/ArtFrame/Art.material = custom_material
+		return
 	var index := -1
 	for i in range(Catalog.data.cards.size()):
 		if Catalog.data.cards[i].key == card.get("key", ""):
