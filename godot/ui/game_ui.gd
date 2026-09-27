@@ -9,6 +9,7 @@ const BEE_PORTRAIT = preload("res://ui/bee_portrait.gd")
 const SPIDER_PORTRAIT = preload("res://ui/spider_portrait.gd")
 const SHRINE_BACKDROP = preload("res://ui/shrine_backdrop.gd")
 const VISUAL = preload("res://ui/bugbound_theme.gd")
+const STATUS_HUD = preload("res://ui/combat_status.gd")
 @export var game_feel_settings: GameFeelSettings = preload("res://ui/default_game_feel.tres")
 var game_feel := GameFeel.new()
 var combat_feedback := FEEDBACK.new()
@@ -28,7 +29,7 @@ var overlay: Control
 var phrases: Array = JSON.parse_string(FileAccess.get_file_as_string("res://data/translations.json"))
 var matcher := RegEx.new()
 var translations := {}
-var mono := SystemFont.new()
+var mono := VISUAL.TERMINAL_FONT
 var last_screen := ""
 var feedback := ""
 var guidance_dismissed := false
@@ -47,7 +48,6 @@ const MENU_SIGNATURES := {
 }
 
 func _ready() -> void:
-	mono.font_names = PackedStringArray(["Consolas", "DejaVu Sans Mono", "monospace"])
 	build_matcher()
 	theme = make_theme()
 	game_feel.settings = game_feel_settings
@@ -77,60 +77,7 @@ func box(fill: Color, border := LINE, _radius := 3, padding := 18) -> StyleBoxFl
 	return VISUAL.panel_style(fill, border, padding)
 
 func make_theme() -> Theme:
-	var result := Theme.new()
-	for role in ["CombatRule", "CombatSecondary"]:
-		result.set_type_variation(role, "Label")
-		result.set_font_size("font_size", role, 16 if role == "CombatRule" else 14)
-		result.set_color("font_color", role, TEXT if role == "CombatRule" else MUTED)
-	result.default_font_size = 18
-	result.set_color("font_color", "Label", TEXT)
-	result.set_color("font_color", "Button", TEXT)
-	result.set_color("font_hover_color", "Button", TEXT)
-	result.set_color("font_disabled_color", "Button", MUTED)
-	result.set_color("font_pressed_color", "Button", TEXT)
-	result.set_color("font_focus_color", "Button", TEXT)
-	for state in ["normal", "hover", "pressed", "disabled"]:
-		var fills := {"normal": SURFACE, "hover": Color("1d354b"), "pressed": INK, "disabled": Color("111725")}
-		result.set_stylebox(state, "Button", box(fills[state], MINT if state == "hover" else LINE, 8, 10))
-	var focus := box(Color.TRANSPARENT, HONEY, 8, 0)
-	focus.set_border_width_all(2)
-	result.set_stylebox("focus", "Button", focus)
-	result.set_type_variation("CompactAction", "Button")
-	for state in ["normal", "hover", "pressed", "disabled"]:
-		var compact_style := result.get_stylebox(state, "Button").duplicate() as StyleBoxFlat
-		compact_style.content_margin_top = 3
-		compact_style.content_margin_bottom = 3
-		result.set_stylebox(state, "CompactAction", compact_style)
-	result.set_type_variation("PrimaryAction", "Button")
-	for state in ["normal", "hover", "pressed"]:
-		var fills := {"normal": HONEY, "hover": HONEY.lightened(0.2), "pressed": HONEY.darkened(0.2)}
-		result.set_stylebox(state, "PrimaryAction", box(fills[state], HONEY, 8, 12))
-	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		result.set_color(state, "PrimaryAction", INK)
-	var primary_focus := focus.duplicate()
-	primary_focus.border_color = TEXT
-	result.set_stylebox("focus", "PrimaryAction", primary_focus)
-	result.set_type_variation("PaperCard", "Button")
-	for state in ["normal", "hover", "pressed", "disabled"]:
-		var fills := {"normal": SURFACE, "hover": Color("1b3046"), "pressed": INK, "disabled": Color("141c29")}
-		var card_style := box(fills[state], HONEY if state == "hover" else LINE, 3, 0)
-		card_style.set_border_width_all(2 if state == "hover" else 1)
-		card_style.shadow_color = Color(MINT, 0.15)
-		card_style.shadow_size = 3
-		card_style.shadow_offset = Vector2(0, 3)
-		result.set_stylebox(state, "PaperCard", card_style)
-	result.set_stylebox("focus", "PaperCard", focus)
-	result.set_stylebox("normal", "LineEdit", box(INK, LINE, 8, 14))
-	result.set_stylebox("focus", "LineEdit", box(INK, HONEY, 8, 14))
-	result.set_color("font_color", "LineEdit", TEXT)
-	result.set_color("caret_color", "LineEdit", HONEY)
-	result.set_stylebox("panel", "TooltipPanel", box(INK, MINT, 3, 12))
-	result.set_color("font_color", "TooltipLabel", TEXT)
-	result.set_constant("separation", "VBoxContainer", VISUAL.GAP)
-	result.set_constant("separation", "HBoxContainer", VISUAL.GAP)
-	result.set_constant("h_separation", "GridContainer", 16)
-	result.set_constant("v_separation", "GridContainer", 16)
-	return result
+	return preload("res://ui/themes/combat_theme.tres")
 
 func build_matcher() -> void:
 	translations.clear()
@@ -497,41 +444,6 @@ func portrait(parent: Node, key: String, height := 140) -> TextureRect:
 	parent.add_child(view)
 	return view
 
-func health(parent: Node, value: int, maximum: int, color: Color, status := "HP", block_amount := -1) -> void:
-	var line := row(parent)
-	if block_amount >= 0:
-		var badge := label(line, "◇ %d BLOCK" % block_amount, 18, MINT)
-		badge.name = "BlockBadge"
-		badge.autowrap_mode = TextServer.AUTOWRAP_OFF
-		badge.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		var badge_style := box(Color("153342") if block_amount > 0 else INK, MINT if block_amount > 0 else LINE, 3, 6)
-		badge_style.content_margin_top = 0
-		badge_style.content_margin_bottom = 0
-		badge.add_theme_stylebox_override("normal", badge_style)
-		badge.tooltip_text = localize("If you end your turn now. Block resets after the enemy acts.")
-		if status != "HP": tag(line, status, color)
-	else:
-		tag(line, status, color)
-	label(line, "HP %d / %d" % [value, maximum], 16).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	var meter := ProgressBar.new()
-	meter.max_value = maximum
-	meter.value = value
-	meter.show_percentage = false
-	meter.custom_minimum_size.y = 12
-	meter.add_theme_stylebox_override("background", box(INK, LINE, 0, 0))
-	meter.add_theme_stylebox_override("fill", box(color, color, 0, 0))
-	parent.add_child(meter)
-	var ticks := Control.new()
-	ticks.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ticks.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	meter.add_child(ticks)
-	ticks.draw.connect(func():
-		for i in range(1, 10):
-			var x := ticks.size.x * i / 10.0
-			ticks.draw_line(Vector2(x, 2), Vector2(x, ticks.size.y - 2), Color(INK, 0.65), 2)
-	)
-	ticks.resized.connect(ticks.queue_redraw)
-
 func battle_screen() -> void:
 	var b := run.battle
 	var enemy: Dictionary = Catalog.data.enemies[b.enemy_key]
@@ -561,18 +473,10 @@ func battle_screen() -> void:
 	player_row.add_child(player_slot)
 	combat_feedback.player = portrait(player_slot, "spider" if run.loadout_key == "spider" else "player", int(player_slot.custom_minimum_size.x))
 	combat_feedback.player.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var player_stats := column(player_row)
-	player_stats.add_theme_constant_override("separation", 6)
-	player_stats.alignment = BoxContainer.ALIGNMENT_CENTER
-	label(player_stats, "Spider Debugger" if run.loadout_key == "spider" else "Bee Programmer", 22)
-	health(player_stats, b.hp, run.max_hp, HONEY, "HP", b.block)
+	STATUS_HUD.header(player_row, localize("Spider Debugger" if run.loadout_key == "spider" else "Bee Programmer"), b.hp, run.max_hp, b.block)
 	var enemy_row := row(enemy_side)
 	combat_feedback.enemy = portrait(enemy_row, b.enemy_key, 72 if compact else 140)
-	var enemy_stats := column(enemy_row)
-	enemy_stats.add_theme_constant_override("separation", 6)
-	enemy_stats.alignment = BoxContainer.ALIGNMENT_CENTER
-	label(enemy_stats, enemy.name, 22).tooltip_text = localize(enemy.feature)
-	health(enemy_stats, b.enemy_hp, enemy.hp, CORAL, "+%d STR" % b.strength, b.enemy_shield)
+	STATUS_HUD.header(enemy_row, localize(enemy.name), b.enemy_hp, enemy.hp, b.enemy_shield, true, b.strength).tooltip_text = localize(enemy.feature)
 	if run.battles_won == 0 and not guidance_dismissed:
 		var lesson_row := row(player, 6)
 		var lesson := label(lesson_row, "Play cards with Energy. Block reduces the next hit.", 16, HONEY)
@@ -611,9 +515,7 @@ func battle_screen() -> void:
 	if b.enemy_key == "antivirus": tag(bug_status, "THREAT LEVEL %d / 6" % b.threat, CORAL)
 	label(bug_panel, "Triggers replace this bug.", 16, MUTED)
 	var bee_bar := row(content, 18)
-	var energy := panel(bee_bar, SURFACE, HONEY, 8)
-	energy.get_parent().size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	label(energy, "%d ENERGY" % b.energy, 22, TEXT).autowrap_mode = TextServer.AUTOWRAP_OFF
+	STATUS_HUD.energy(bee_bar, b.energy)
 	var states: Array[String] = []
 	if run.loadout_key == "spider":
 		var web_group := column(bee_bar)

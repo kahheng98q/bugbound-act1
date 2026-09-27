@@ -18,11 +18,15 @@ The hand scrolls horizontally when it contains more cards than fit in the window
 
 `ui/bugbound_theme.gd` centralizes navy surfaces, readable text, cyan shielding,
 magenta threats, acid-green resources, spacing, asymmetric borders, subtle edge
-glow, and static packet marks. `ui/game_ui.gd` builds shared button/card theme
-variations and applies the same terminal treatment to status, intent, previews,
+glow, and static packet marks. `ui/themes/combat_theme.tres` provides shared
+button/card theme variations; `ui/game_ui.gd` applies terminal treatment to status, intent, previews,
 the bug monitor, pile inspectors, and numbered combat-log entries. HP uses a
 segmented meter; Block uses a cyan outlined diamond badge with an explicit count.
 Decorations ignore input and do not flicker or consume gameplay RNG.
+
+Phase 1 adds reusable semantic panel, HP/block/energy, typography and spacing
+roles without redesigning components. See [the theme registry](ui/themes/README.md)
+for all tokens, usage, and the audit of remaining local overrides.
 
 `ui/game_feel.gd` reuses the palette for impact bursts, shield feedback, damage,
 and completion popups. `data/translations.json` includes combat shortcut and
