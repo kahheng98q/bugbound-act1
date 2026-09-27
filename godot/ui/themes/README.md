@@ -78,6 +78,14 @@ row.add_theme_constant_override("separation", theme.get_constant("small_gap", "B
 
 ## Audit: controls that still bypass shared Theme roles
 
+Phase 3 opts combat header buttons into `CombatAction`, pile/log controls into
+`CombatCounter`, and End Turn into `CombatEndTurn`. The last role has lime active,
+bright hover/pressed, keyboard-focus, and desaturated disabled states. Other
+screens retain the original button roles. The monitor uses lime trigger/state,
+cyan reward, and coral cost diagnostic rows; intent emphasizes attack before
+block and post-block damage. The log uses a muted terminal feed with cyan values.
+Helper text is 14 px with a reserved 56 px preview area to prevent layout shifts.
+
 These are deliberately deferred rather than redesigned in Phase 1:
 
 - `game_ui.gd`: `panel()` and `box()` use the shared StyleBox factory, but still

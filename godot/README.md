@@ -36,6 +36,16 @@ points, stable previews, current Chinese labels, and exhaust retention.
 
 `ui/card_view.gd` and `scenes/card.tscn` retain readable rules and existing art,
 with cyan skill, magenta attack, and acid-green bee labels and cost chips.
+Phase 4 uses reusable `ui/card_style.gd` command frames with prominent cost chips,
+dark illustration wells, and semantic borders. Inspection cards use a quiet normal
+frame; playable, hover, keyboard-selected, pressed, and unavailable states are
+distinct. Unavailable art is desaturated through the existing cutout material.
+The fixed hand slots use 16 px gaps and retain horizontal scrolling, number-key
+selection, Enter to play, and readable unavailable-card explanations. Combat
+resolves against the current enemy immediately, so there is no separate targeting
+mode. `tests/test_phase4_cards.gd` covers selection, play, energy, hand/pile updates,
+unavailable cards, and turn drawing; the existing combat capture script covers
+both Chinese viewport sizes and the complete catalog's text bounds.
 The draw/discard/exhaust buttons open read-only piles. `core/combat.gd` retains
 exhausted/removed cards for inspection without returning them to the draw pool.
 

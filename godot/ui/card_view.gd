@@ -1,6 +1,9 @@
 extends Button
 
 const BugboundTheme = preload("res://ui/bugbound_theme.gd")
+const CardStyle = preload("res://ui/card_style.gd")
+var _visual_state := ""
+var _state_styles: Dictionary = {}
 var _locked := false
 var inspection_mode := false
 var art_height := 104.0
@@ -22,11 +25,24 @@ func _process(_delta: float) -> void:
 	while ancestor is Control:
 		if ancestor.clip_contents: area = area.intersection(ancestor.get_global_rect())
 		ancestor = ancestor.get_parent()
-	var allowed: bool = not disabled and is_visible_in_tree() and (not hover_allowed.is_valid() or hover_allowed.call())
+	var allowed: bool = is_visible_in_tree() and (not hover_allowed.is_valid() or hover_allowed.call())
 	var active: bool = allowed and (has_focus() or area.has_point(_pointer))
 	if active != _hovered:
 		_hovered = active
 		game_feel.card_hover(self, active)
+		z_index = 10 if active else 0
+	_update_frame(allowed)
+
+func _update_frame(allowed := true) -> void:
+	var state := "disabled" if _locked else ("normal" if inspection_mode else "playable")
+	if allowed and has_focus(): state = "selected"
+	elif allowed and _hovered: state = "hover"
+	if allowed and is_pressed() and not _locked: state = "pressed"
+	if state == _visual_state or _state_styles.is_empty(): return
+	_visual_state = state
+	# Fixed-slot hover and keyboard selection share one authoritative frame.
+	for role in ["normal", "hover", "pressed", "disabled"]:
+		add_theme_stylebox_override(role, _state_styles[state])
 
 func _exit_tree() -> void:
 	if is_instance_valid(game_feel): game_feel.reset_hover(self)
@@ -36,6 +52,7 @@ func _ready() -> void:
 	get_viewport().mouse_exited.connect(func(): _pointer = Vector2(-10000, -10000))
 	flat = false
 	theme_type_variation = "PaperCard"
+	add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	$Margin/Body/Top/Cost/Value.add_theme_color_override("font_color", BugboundTheme.INK)
 	$Margin/Body/Top/Type.add_theme_color_override("font_color", BugboundTheme.CYAN)
 	$Margin/Body/Name.add_theme_color_override("font_color", BugboundTheme.TEXT)
@@ -63,10 +80,15 @@ func configure(card: Dictionary, localize: Callable, action: Callable, locked: b
 	if not inspect and not pressed.is_connected(action): pressed.connect(action)
 	tooltip_text = localize.call(Catalog.describe(card))
 	var kind := str(card.get("kind", "skill"))
-	var accent := BugboundTheme.ACID if card.get("key", "") in Catalog.BEE or card.has("artSlot") else _accent_for(kind)
+	var accent := CardStyle.accent_for(kind)
+	var surface_accent := accent.lerp(BugboundTheme.MUTED, 0.8) if locked else accent
+	for state in ["normal", "playable", "hover", "selected", "pressed", "disabled"]:
+		_state_styles[state] = CardStyle.frame(surface_accent, state)
+	_visual_state = ""
+	_update_frame()
 	$Margin/Body/Top/Cost/Value.text = str(int(card.get("cost", 0)))
 	$Margin/Body/Top/Type.text = localize.call(kind.to_upper())
-	$Margin/Body/Top/Type.add_theme_color_override("font_color", accent)
+	$Margin/Body/Top/Type.add_theme_color_override("font_color", surface_accent.lerp(BugboundTheme.MUTED, 0.35))
 	$Margin/Body/Name.text = localize.call(str(card.get("name", "")))
 	$Margin/Body/Effect.text = localize.call(Catalog.describe(card))
 	$Margin/Body/Effect.add_theme_font_size_override("font_size", 16)
@@ -75,8 +97,8 @@ func configure(card: Dictionary, localize: Callable, action: Callable, locked: b
 	$Margin/Body/LockNotice.visible = locked
 	$Margin/Body/LockNotice.text = localize.call("REQUIREMENTS NOT MET")
 	$Margin/Body/LockNotice.add_theme_color_override("font_color", BugboundTheme.MAGENTA)
-	$Margin/Body/ArtFrame.add_theme_stylebox_override("panel", _frame_style(accent))
-	$Margin/Body/Top/Cost.add_theme_stylebox_override("panel", _cost_style(accent))
+	$Margin/Body/ArtFrame.add_theme_stylebox_override("panel", CardStyle.art_well(surface_accent))
+	$Margin/Body/Top/Cost.add_theme_stylebox_override("panel", CardStyle.cost_chip(surface_accent))
 	_set_art(card)
 	_apply_locked_state()
 
@@ -116,21 +138,10 @@ func _set_art(card: Dictionary) -> void:
 	paper_material.shader = load("res://ui/paper_cutout.gdshader")
 	$Margin/Body/ArtFrame/Art.material = paper_material
 
-func _frame_style(accent: Color) -> StyleBoxFlat:
-	# The art keeps its paper-cutout shader while this dark well frames it in the card's neon accent.
-	return BugboundTheme.panel_style(BugboundTheme.INK.lightened(0.1), accent, 4)
-
-func _cost_style(accent: Color) -> StyleBoxFlat:
-	var style := BugboundTheme.panel_style(accent, accent.lightened(0.24), 2)
-	style.set_corner_radius_all(12)
-	style.content_margin_left = 9
-	style.content_margin_right = 9
-	return style
-
-func _accent_for(kind: String) -> Color:
-	return BugboundTheme.MAGENTA if kind == "attack" else (BugboundTheme.ACID if kind == "bee" else BugboundTheme.CYAN)
-
 func _apply_locked_state() -> void:
+	var art_material = $Margin/Body/ArtFrame/Art.material
+	if art_material is ShaderMaterial:
+		art_material.set_shader_parameter("desaturation", 0.85 if _locked else 0.0)
 	$Margin/Body/ArtFrame/Art.modulate = Color(0.54, 0.59, 0.58, 1.0) if _locked else Color.WHITE
-	$Margin/Body/Name.modulate = BugboundTheme.MUTED if _locked else BugboundTheme.TEXT
-	$Margin/Body/Effect.modulate = BugboundTheme.MUTED if _locked else BugboundTheme.TEXT
+	$Margin/Body/Name.add_theme_color_override("font_color", BugboundTheme.MUTED if _locked else BugboundTheme.TEXT)
+	$Margin/Body/Effect.add_theme_color_override("font_color", BugboundTheme.MUTED if _locked else BugboundTheme.TEXT.darkened(0.12))

@@ -200,6 +200,9 @@ func render() -> void:
 	if run.screen != "menu":
 		button(header, "Deck · %d  [D]" % run.cards.size(), func(): collection(false))
 		button(header, "Pause  /  Esc", pause_menu)
+		if run.screen == "battle":
+			for action in header.get_children():
+				if action is Button: action.theme_type_variation = "CombatAction"
 		if run.screen != "battle":
 			var bar := row(content, 24)
 			tag(bar, "ACT 1  /  DESKTOP", MINT)
@@ -484,36 +487,46 @@ func battle_screen() -> void:
 		button(lesson_row, "×", dismiss_guidance).tooltip_text = localize("Dismiss guidance")
 	else:
 		label(player, enemy.feature, 16, MUTED)
-	var intent := panel(enemy_side, Color("29172d"), CORAL, 8)
+	var intent := panel(enemy_side, Color(INK, 0.92), VISUAL.DANGER, 6)
 	intent.add_theme_constant_override("separation", 2)
-	label(intent, localize("Attack: %d · Block: %d") % [b.intent_damage(), b.intent.block], 18, CORAL)
-	var incoming := label(intent, localize("After Block: %d damage") % b.incoming_damage(), 18, MINT if b.incoming_damage() == 0 else CORAL)
+	var threat_values := row(intent, 12)
+	label(threat_values, "攻击 %02d" % b.intent_damage(), 24, VISUAL.DANGER)
+	label(threat_values, "格挡 %02d" % b.intent.block, 20, MINT)
+	var threat_details := row(intent, 6)
+	var incoming := label(threat_details, localize("After Block: %d damage") % b.incoming_damage(), 16, MINT if b.incoming_damage() == 0 else VISUAL.DANGER)
 	if b.incoming_damage() >= b.hp: incoming.text += " · [!] " + localize("LETHAL")
+	tag(threat_details, localize(b.intent.label), MUTED).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	intent.tooltip_text = localize(b.intent.label) + (localize("  ·  +%d BLOCK") % b.intent.block if b.intent.block else "")
 	incoming.name = "IncomingDamage"
 	incoming.tooltip_text = localize("If you end your turn now. Block resets after the enemy acts.")
-	var bug_panel := panel(stage, SURFACE, MINT, 10 if compact else 14)
+	var bug_panel := panel(stage, Color(INK, 0.94), HONEY, 10 if compact else 14)
 	bug_panel.name = "MonitorBody"
 	combat_feedback.monitor = bug_panel.get_parent()
 	combat_feedback.completion_text = localize("BUG COMPLETE!")
-	bug_panel.add_theme_constant_override("separation", 6)
+	bug_panel.add_theme_constant_override("separation", 3)
 	bug_panel.get_parent().custom_minimum_size.x = 380
 	var bug: Dictionary = Catalog.data.bugs[b.bug]
 	var trigger_text: String = {"memory": "Draw 1+ cards with a card", "firewall": "Gain 5+ Block with one card"}.get(b.bug, bug.trigger)
 	var monitor_title := row(bug_panel, 8)
 	var monitor_heading := tag(monitor_title, "BUG MONITOR", HONEY)
-	label(monitor_title, bug.name, 20)
-	for rule in [["TRIGGER", trigger_text, TEXT], ["GAIN", bug.reward, MINT], ["COST", bug.risk, CORAL]]:
+	tag(monitor_title, "● 监听中", HONEY).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	label(bug_panel, bug.name, 20)
+	for rule in [["TRIGGER", trigger_text, HONEY], ["GAIN", bug.reward, MINT], ["COST", bug.risk, VISUAL.DANGER]]:
 		var rule_label := label(bug_panel, localize(rule[0]) + ": " + localize(rule[1]), 16, rule[2])
+		var rule_style := box(Color(SURFACE, 0.85), Color(rule[2], 0.4), 3, 4)
+		rule_style.content_margin_top = 1
+		rule_style.content_margin_bottom = 1
+		rule_style.shadow_size = 0
+		rule_label.add_theme_stylebox_override("normal", rule_style)
 		if rule[0] == "TRIGGER": rule_label.name = "BugTrigger"
 	var bug_status := row(bug_panel, 8)
 	bug_status.name = "BugStatus"
 	if bug.has("target"): combat_feedback.progress = tag(bug_status, "%d / %d  %s" % [b.progress, bug.target, bug.progressLabel], HONEY)
-	else: combat_feedback.progress = tag(bug_status, "%d BUG TRIGGERS" % b.triggers)
+	else: combat_feedback.progress = tag(bug_status, "等待触发 · " + localize("%d BUG TRIGGERS" % b.triggers), HONEY)
 	combat_feedback.progress.name = "BugProgress"
 	combat_feedback.progress.set_meta("complete_text", localize("%d / %d  %s" % [bug.target, bug.target, bug.progressLabel] if bug.has("target") else "%d BUG TRIGGERS" % (b.triggers + 1)))
 	if b.enemy_key == "antivirus": tag(bug_status, "THREAT LEVEL %d / 6" % b.threat, CORAL)
-	label(bug_panel, "Triggers replace this bug.", 16, MUTED)
+	label(bug_panel, "Triggers replace this bug.", 14, MUTED)
 	var bee_bar := row(content, 18)
 	STATUS_HUD.energy(bee_bar, b.energy)
 	var states: Array[String] = []
@@ -566,13 +579,14 @@ func battle_screen() -> void:
 	for pile in [["抽牌", b.deck], ["弃牌", b.discard], ["消耗", b.exhaust]]:
 		var pile_button := button(piles, "%s %d" % [pile[0], pile[1].size()], show_card_pile.bind(pile[0], pile[1]))
 		pile_button.add_theme_font_size_override("font_size", 14)
-		pile_button.theme_type_variation = "CompactAction"
-	button(tools, "Battle log", show_log).theme_type_variation = "CompactAction"
-	button(bee_bar, "END TURN  [E]", end_turn, b.popup_open or not b.choice.is_empty(), true)
-	preview_label = label(content, "1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map", 16, TEXT)
+		pile_button.theme_type_variation = "CombatCounter"
+		pile_button.add_theme_font_override("font", mono)
+	button(tools, "Battle log", show_log).theme_type_variation = "CombatCounter"
+	button(bee_bar, "END TURN  [E]", end_turn, b.popup_open or not b.choice.is_empty(), true).theme_type_variation = "CombatEndTurn"
+	preview_label = label(content, "1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map", 14, MUTED)
 	preview_label.name = "CardPreview"
 	preview_label.custom_minimum_size.y = 56
-	preview_label.theme_type_variation = "CombatRule"
+	preview_label.theme_type_variation = "CombatHelp"
 	var preview_style := box(Color(INK, 0.94), LINE, 3, 8)
 	preview_style.content_margin_top = 2
 	preview_style.content_margin_bottom = 2
@@ -591,6 +605,8 @@ func battle_screen() -> void:
 	hand_margin.add_theme_constant_override("margin_right", 8)
 	hand_scroll.add_child(hand_margin)
 	var cards := row(hand_margin)
+	# Keep adjacent cards clear even while one is lifted and scaled for selection.
+	cards.add_theme_constant_override("separation", 16)
 	cards.alignment = BoxContainer.ALIGNMENT_CENTER
 	for i in range(b.hand.size()):
 		var card: Dictionary = b.hand[i]
@@ -656,13 +672,16 @@ func battle_screen() -> void:
 		for card in choices: button(dialog, card.name, run.choose.bind(int(card.id)))
 
 func show_combat_help(value: String) -> void:
-	if is_instance_valid(preview_label): preview_label.text = value
+	if is_instance_valid(preview_label):
+		preview_label.text = value
+		preview_label.add_theme_color_override("font_color", TEXT)
 
 func clear_combat_help() -> void:
 	preview_card_id = -1
 	var trigger := find_child("BugTrigger", true, false) as Label
-	if trigger: trigger.add_theme_color_override("font_color", TEXT)
+	if trigger: trigger.add_theme_color_override("font_color", HONEY)
 	show_combat_help(localize("1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map"))
+	if is_instance_valid(preview_label): preview_label.add_theme_color_override("font_color", MUTED)
 
 func clear_card_preview(id: int, view: Control) -> void:
 	if view.has_focus(): return
@@ -677,13 +696,13 @@ func show_card_preview(card: Dictionary) -> void:
 	preview_card_id = int(card.id)
 	var b := run.battle
 	var trigger := find_child("BugTrigger", true, false) as Label
-	if trigger: trigger.add_theme_color_override("font_color", TEXT)
+	if trigger: trigger.add_theme_color_override("font_color", HONEY)
 	var reason: String = b.unplayable_reason(card)
 	if not reason.is_empty():
 		show_combat_help(localize(card.name) + " · " + localize(reason))
 		return
 	var prediction: Dictionary = b.preview_card(card)
-	if trigger: trigger.add_theme_color_override("font_color", HONEY if prediction.triggers_bug else TEXT)
+	if trigger: trigger.add_theme_color_override("font_color", HONEY if prediction.triggers_bug else MUTED)
 	var details: Array[String] = [localize("Cost %d Energy") % card.cost]
 	for item in [[prediction.damage, "Deal %d damage"], [prediction.block, "Gain %d Block"], [card.get("draw", 0), "Draw %d"], [card.get("energy", 0), "Gain %d Energy"], [card.get("heal", 0), "Repair %d HP"], [card.get("selfDamage", 0), "Lose %d HP"], [prediction.nectar_spent, "Spend %d Nectar"]]:
 		if item[0] > 0: details.append(localize(item[1]) % item[0])
@@ -902,9 +921,31 @@ func hand_shortcut_index(keycode: Key) -> int:
 func show_log() -> void:
 	var body := modal("Battle log")
 	button(body, "Close", render).grab_focus()
+	var feed := panel(body, Color(INK, 0.92), Color(MINT, 0.38), 8)
+	feed.add_theme_constant_override("separation", 4)
+	tag(feed, "事件流 / 最新事件在前", MUTED)
+	var numbers := RegEx.new()
+	numbers.compile("[+-]?[0-9]+")
 	for i in range(run.battle.log.size()):
-		var entry := label(body, "%02d  ›  %s" % [i + 1, localize(run.battle.log[i])], 17, TEXT)
-		entry.add_theme_stylebox_override("normal", box(INK, LINE, 3, 8))
+		var entry := RichTextLabel.new()
+		entry.bbcode_enabled = true
+		entry.fit_content = true
+		entry.scroll_active = false
+		entry.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		entry.add_theme_font_override("normal_font", mono)
+		entry.add_theme_font_size_override("normal_font_size", 14)
+		entry.add_theme_color_override("default_color", MUTED)
+		var message := localize(run.battle.log[i])
+		var cursor := 0
+		entry.append_text("[color=#50e5ee]%02d ›[/color] " % [i + 1])
+		for matched in numbers.search_all(message):
+			entry.add_text(message.substr(cursor, matched.get_start() - cursor))
+			entry.push_color(MINT)
+			entry.add_text(matched.get_string())
+			entry.pop()
+			cursor = matched.get_end()
+		entry.add_text(message.substr(cursor))
+		feed.add_child(entry)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not content.visible: return

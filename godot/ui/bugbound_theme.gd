@@ -146,6 +146,30 @@ static func populate_theme(result: Theme) -> void:
 	primary_focus.border_color = TEXT
 	result.set_stylebox("focus", "PrimaryAction", primary_focus)
 	result.set_type_variation("PaperCard", "Button")
+	# Phase 3 roles are opt-in, keeping noncombat controls and cards unchanged.
+	for role in ["CombatAction", "CombatCounter", "CombatEndTurn"]:
+		result.set_type_variation(role, "Button")
+		result.set_font_size("font_size", role, 14 if role == "CombatCounter" else 18)
+		for state in ["normal", "hover", "pressed", "disabled"]:
+			var active: bool = role == "CombatEndTurn" and state != "disabled"
+			var fill: Color = SURFACE_DISABLED if state == "disabled" else SURFACE
+			var edge: Color = LINE
+			if active:
+				fill = ACID.lightened(0.22) if state == "hover" else (TEXT if state == "pressed" else ACID)
+				edge = TEXT if state in ["hover", "pressed"] else ACID
+			elif state in ["hover", "pressed"]:
+				fill = SURFACE_SELECTED if state == "pressed" else SURFACE_HOVER
+				edge = CYAN
+			var control_style := panel_style(fill, edge, 10)
+			control_style.content_margin_top = 3 if role == "CombatCounter" else 10
+			control_style.content_margin_bottom = control_style.content_margin_top
+			control_style.shadow_size = (8 if state == "hover" else 4) if active else 0
+			control_style.shadow_color = Color(ACID, 0.26)
+			result.set_stylebox(state, role, control_style)
+		for font_state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+			result.set_color(font_state, role, INK if role == "CombatEndTurn" else TEXT)
+		result.set_color("font_disabled_color", role, MUTED_TEXT)
+		result.set_stylebox("focus", role, primary_focus if role == "CombatEndTurn" else focus)
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var fills := {"normal": SURFACE, "hover": CARD_HOVER, "pressed": INK, "disabled": CARD_DISABLED}
 		var card_style := panel_style(fills[state], ACID if state == "hover" else LINE, 0)
