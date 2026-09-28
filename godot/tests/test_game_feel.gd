@@ -166,19 +166,23 @@ func ui_integration() -> void:
 	expected.start("BUG-404-LOL")
 	expected.enter("t0l0")
 	await settle()
-	var bee: Control = game.combat_feedback.player
-	var bee_slot: Control = bee.get_parent()
-	var bee_origin := bee.position
-	var slot_origin := bee_slot.position
-	await settle(0.3)
-	check(bee.scale == Vector2.ONE, "Static bee stays in its idle pose")
-	check(bee_slot.position == slot_origin and bee.position == bee_origin, "Idle does not move the fixed portrait slot")
+	var stage := game.find_child("FirstPersonStage", true, false) as Control
+	var world := game.find_child("WorldActors", true, false) as Control
+	var hands := game.find_child("FirstPersonTools", true, false) as Control
+	var diagnostics := game.find_child("DiagnosticsOverlay", true, false) as Control
+	var player_hud := game.find_child("PlayerHUD", true, false) as Control
+	var player_header: Control = game.combat_feedback.player
+	check(stage != null and world != null and hands != null and diagnostics != null, "First-person stage keeps world, tool, and diagnostics layers")
+	check(stage.is_ancestor_of(world) and stage.is_ancestor_of(hands) and stage.is_ancestor_of(diagnostics), "Stage layers remain inside the first-person camera")
+	check(player_header.name == "PlayerCombatHeader" and not stage.is_ancestor_of(player_header), "Player feedback targets the HUD instead of a battlefield portrait")
+	check(stage.find_children("*", "BeePortrait", true, false).is_empty(), "First-person stage has no player portrait")
+	check(player_hud.get_global_rect().position.y >= stage.get_global_rect().end.y - 1.0 and not player_hud.get_global_rect().intersects(game.combat_feedback.enemy.get_global_rect()), "Player HUD sits below the stage without covering the enemy")
 	var folder: TextureRect = game.combat_feedback.enemy
 	check(folder.texture.resource_path == "res://assets/characters/corrupted-folder.png", "Folder combat portrait uses the Blender prototype")
 	check(folder.material == null, "Folder prototype preserves its native alpha without a paper shader")
-	var pose := Vector2(bee.idle_time, bee.attack_time)
+	check(world.is_ancestor_of(folder) and stage.get_global_rect().encloses(folder.get_global_rect()), "Enemy visual remains in the world layer within the stage")
 	game.render()
-	check(Vector2(game.combat_feedback.player.idle_time, game.combat_feedback.player.attack_time) == pose, "UI rebuild preserves animation phase")
+	check(game.combat_feedback.player.name == "PlayerCombatHeader", "UI rebuild preserves the HUD feedback target")
 	# Snapshot the laid-out monitor, not the zero-size controls just rebuilt above.
 	await settle()
 	var monitor: Control = game.combat_feedback.monitor
@@ -190,19 +194,24 @@ func ui_integration() -> void:
 	var views: Array = game.combat_feedback.cards.values()
 	var card: Control = views[1]
 	var slot: Control = card.get_parent()
+	var rest_y := card.position.y
+	var center_index := int((game.run.battle.hand.size() - 1) * 0.5)
+	var center_card: Control = game.combat_feedback.cards[int(game.run.battle.hand[center_index].id)]
+	var outer_card: Control = game.combat_feedback.cards[int(game.run.battle.hand[0].id)]
+	check(center_card.position.y < outer_card.position.y and outer_card.position.y > 0.0, "Hand fan keeps center cards higher than outer cards")
 	move_pointer(slot.get_global_rect().get_center())
 	await settle(0.18)
 	check(card.scale.is_equal_approx(Vector2.ONE * 1.05), "Real pointer input hovers the card (scale %s, pointer %s, slot %s)" % [card.scale, card.get_global_mouse_position(), slot.get_global_rect()])
-	check(slot.position.y == 0 and card.position.y == -12, "Hover leaves hand layout slot stationary")
+	check(slot.position.y == 0 and is_equal_approx(card.position.y, rest_y - 12.0), "Hover leaves hand layout slot stationary")
 	var scroll: Control = slot.get_parent().get_parent().get_parent()
 	check(scroll.get_global_rect().encloses(card.get_global_rect()), "Lifted card stays inside scroll clip")
 	await screenshot("hover-1280-en")
 	move_pointer(Vector2(4, 4))
 	await settle(0.16)
-	check(card.scale.is_equal_approx(Vector2.ONE), "Pointer exit returns card to rest")
+	check(card.scale.is_equal_approx(Vector2.ONE) and is_equal_approx(card.position.y, rest_y), "Pointer exit returns card to its fanned rest pose")
 	card.grab_focus()
 	await settle(0.16)
-	check(card.scale.x > 1.04, "Keyboard focus receives hover feedback")
+	check(card.scale.x > 1.05 and card.position.y < rest_y - 12.0, "Keyboard selection rises above pointer hover")
 	card.release_focus()
 	await settle(0.16)
 	var id: int = game.run.battle.hand[1].id
@@ -210,12 +219,11 @@ func ui_integration() -> void:
 	expected.play(id)
 	check(state(game.run) == state(expected), "Combat resolves immediately before visual impact")
 	await settle(0.10)
-	check(game.combat_feedback.player.attack_time >= 0.0, "Static bee attack hook survives the UI rebuild")
+	check(game.combat_feedback.player.name == "PlayerCombatHeader", "Card feedback continues to target the rebuilt player HUD")
 	await screenshot("card-flight")
 	await settle(game.game_feel.settings.anticipation_duration + game.game_feel.settings.play_duration)
 	await screenshot("enemy-damage")
 	await settle(0.7)
-	check(game.combat_feedback.player.attack_time < 0.0 and game.combat_feedback.player.scale == Vector2.ONE, "Static bee returns to its idle pose after attacking")
 	check(state(game.run) == state(expected), "Finishing effects never changes gameplay or RNG")
 	var hp_before_enemy: int = game.run.battle.hp
 	game.end_turn()

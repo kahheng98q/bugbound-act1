@@ -460,59 +460,80 @@ func battle_screen() -> void:
 	var enemy: Dictionary = Catalog.data.enemies[b.enemy_key]
 	var compact := get_viewport_rect().size.y < 800
 	if compact: content.add_theme_constant_override("separation", 2)
-	var stage := row(content, 16)
-	var arena := panel(stage, Color(INK, 0.88), LINE, 9 if compact else 16)
-	if compact: arena.add_theme_constant_override("separation", 8)
-	arena.get_parent().size_flags_stretch_ratio = 3.2
-	var title := row(arena)
+	content.add_theme_constant_override("separation", 2)
+	# The camera is the player; keep future tools separate from world actors.
+	var stage := Control.new()
+	stage.name = "FirstPersonStage"
+	stage.custom_minimum_size.y = get_viewport_rect().size.y - (422 if compact else 444)
+	stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(stage)
+	var world := Control.new()
+	world.name = "WorldActors"
+	world.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stage.add_child(world)
+	world.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var title := row(stage)
+	title.size.x = 370
 	var total_tiers := 1
 	for node in run.map: total_tiers = maxi(total_tiers, int(node.tier) + 1)
-	var context := tag(title, localize("ACT 1  /  DESKTOP") + " · " + localize("Route %d / %d") % [run.tier + 1, total_tiers] + " · " + localize(str(enemy.kind).capitalize()) + " · " + localize(Catalog.LOADOUTS[run.loadout_key].name))
+	var context := tag(title, localize("Route %d / %d") % [run.tier + 1, total_tiers] + " · " + localize(str(enemy.kind).capitalize()) + " · " + localize("TURN %02d" % b.turn), HONEY)
 	context.name = "RunContext"
-	context.tooltip_text = enemy.process + " · SEED " + run.rng.seed_text
-	tag(title, "TURN %02d" % b.turn, HONEY).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	var fighters := row(arena, 24)
-	fighters.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	var player := column(fighters)
-	var enemy_side := column(fighters)
-	for side in [player, enemy_side]: side.add_theme_constant_override("separation", 8)
-	var player_row := row(player)
-	# Artwork frames change inside a fixed slot without moving the battle layout.
-	var player_slot := Control.new()
-	player_slot.custom_minimum_size = Vector2.ONE * (72 if compact else 140)
-	player_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	player_row.add_child(player_slot)
-	combat_feedback.player = portrait(player_slot, "spider" if run.loadout_key == "spider" else "player", int(player_slot.custom_minimum_size.x), true)
-	combat_feedback.player.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	STATUS_HUD.header(player_row, localize("Spider Debugger" if run.loadout_key == "spider" else "Bee Programmer"), b.hp, run.max_hp, b.block)
-	var enemy_row := row(enemy_side)
-	combat_feedback.enemy = portrait(enemy_row, b.enemy_key, 72 if compact else 140, true)
-	STATUS_HUD.header(enemy_row, localize(enemy.name), b.enemy_hp, enemy.hp, b.enemy_shield, true, b.strength).tooltip_text = localize(enemy.feature)
-	if run.battles_won == 0 and not guidance_dismissed:
-		var lesson_row := row(player, 6)
-		var lesson := label(lesson_row, "Play cards with Energy. Block reduces the next hit.", 16, HONEY)
-		lesson.name = "FirstBattleGuide"
-		button(lesson_row, "×", dismiss_guidance).tooltip_text = localize("Dismiss guidance")
-	else:
-		label(player, enemy.feature, 16, MUTED)
-	var intent := panel(enemy_side, Color(INK, 0.92), VISUAL.DANGER, 6)
-	intent.add_theme_constant_override("separation", 2)
+	context.tooltip_text = localize("ACT 1  /  DESKTOP") + " · " + localize(Catalog.LOADOUTS[run.loadout_key].name) + " · " + enemy.process + " · SEED " + run.rng.seed_text
+	var enemy_anchor := Control.new()
+	enemy_anchor.name = "EnemyAnchor"
+	enemy_anchor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	world.add_child(enemy_anchor)
+	enemy_anchor.anchor_left = 0.5
+	enemy_anchor.anchor_right = 0.5
+	enemy_anchor.offset_left = -150
+	enemy_anchor.offset_right = 150
+	enemy_anchor.offset_bottom = stage.custom_minimum_size.y
+	var enemy_header := STATUS_HUD.header(enemy_anchor, localize(enemy.name), b.enemy_hp, enemy.hp, b.enemy_shield, true, b.strength)
+	enemy_header.position = Vector2(0, 6)
+	enemy_header.size.x = 300
+	enemy_header.tooltip_text = localize(enemy.feature)
+	var actor_size := 220 if compact else 322
+	combat_feedback.enemy = portrait(enemy_anchor, b.enemy_key, actor_size, true)
+	combat_feedback.enemy.name = "EnemyVisual"
+	combat_feedback.enemy.position = Vector2((300 - actor_size) * 0.5, 68 if compact else 100)
+	combat_feedback.enemy.size = Vector2.ONE * actor_size
+	var intent := panel(enemy_anchor, Color(INK, 0.85), VISUAL.DANGER, 5)
+	intent.get_parent().position = Vector2(10, stage.custom_minimum_size.y - 42)
+	intent.get_parent().size.x = 280
 	var threat_values := row(intent, 12)
-	label(threat_values, "攻击 %02d" % b.intent_damage(), 24, VISUAL.DANGER)
-	label(threat_values, "格挡 %02d" % b.intent.block, 20, MINT)
-	var threat_details := row(intent, 6)
-	var incoming := label(threat_details, localize("After Block: %d damage") % b.incoming_damage(), 16, MINT if b.incoming_damage() == 0 else VISUAL.DANGER)
-	if b.incoming_damage() >= b.hp: incoming.text += " · [!] " + localize("LETHAL")
-	tag(threat_details, localize(b.intent.label), MUTED).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	intent.tooltip_text = localize(b.intent.label) + (localize("  ·  +%d BLOCK") % b.intent.block if b.intent.block else "")
+	label(threat_values, "攻击 %02d" % b.intent_damage(), 20, VISUAL.DANGER)
+	label(threat_values, "◇ %02d" % b.intent.block, 20, MINT)
+	label(threat_values, "ⓘ", 20, HONEY)
+	var incoming := label(intent, localize("After Block: %d damage") % b.incoming_damage(), 16, VISUAL.DANGER)
 	incoming.name = "IncomingDamage"
-	incoming.tooltip_text = localize("If you end your turn now. Block resets after the enemy acts.")
-	var bug_panel := panel(stage, Color(INK, 0.94), HONEY, 10 if compact else 14)
+	if b.incoming_damage() >= b.hp: incoming.text += " · [!] " + localize("LETHAL")
+	incoming.hide()
+	var intent_help := localize(b.intent.label) + "\n" + incoming.text + "\n" + localize("If you end your turn now. Block resets after the enemy acts.")
+	intent.get_parent().tooltip_text = intent_help
+	intent.get_parent().focus_mode = Control.FOCUS_ALL
+	intent.get_parent().focus_entered.connect(func(): show_combat_help(intent_help))
+	intent.get_parent().focus_exited.connect(clear_combat_help)
+	for item in threat_values.get_children():
+		item.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		item.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var hands := Control.new()
+	hands.name = "FirstPersonTools"
+	hands.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stage.add_child(hands)
+	hands.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var diagnostics := VBoxContainer.new()
+	diagnostics.name = "DiagnosticsOverlay"
+	stage.add_child(diagnostics)
+	diagnostics.anchor_left = 1.0
+	diagnostics.anchor_right = 1.0
+	diagnostics.offset_left = -310
+	diagnostics.offset_top = 36
+	var bug_panel := panel(diagnostics, Color(INK, 0.78), Color(HONEY, 0.6), 10)
 	bug_panel.name = "MonitorBody"
 	combat_feedback.monitor = bug_panel.get_parent()
 	combat_feedback.completion_text = localize("BUG COMPLETE!")
 	bug_panel.add_theme_constant_override("separation", 3)
-	bug_panel.get_parent().custom_minimum_size.x = 380
+	bug_panel.get_parent().custom_minimum_size.x = 310
 	var bug: Dictionary = Catalog.data.bugs[b.bug]
 	var trigger_text: String = {"memory": "Draw 1+ cards with a card", "firewall": "Gain 5+ Block with one card"}.get(b.bug, bug.trigger)
 	var monitor_title := row(bug_panel, 8)
@@ -535,7 +556,15 @@ func battle_screen() -> void:
 	combat_feedback.progress.set_meta("complete_text", localize("%d / %d  %s" % [bug.target, bug.target, bug.progressLabel] if bug.has("target") else "%d BUG TRIGGERS" % (b.triggers + 1)))
 	if b.enemy_key == "antivirus": tag(bug_status, "THREAT LEVEL %d / 6" % b.threat, CORAL)
 	label(bug_panel, "Triggers replace this bug.", 14, MUTED)
-	var bee_bar := row(content, 18)
+	var player_hud := column(content)
+	player_hud.name = "PlayerHUD"
+	player_hud.add_theme_constant_override("separation", 0)
+	var bee_bar := row(player_hud, 12)
+	combat_feedback.player = STATUS_HUD.header(bee_bar, localize("Spider Debugger" if run.loadout_key == "spider" else "Bee Programmer"), b.hp, run.max_hp, b.block)
+	combat_feedback.player.custom_minimum_size.x = 260
+	combat_feedback.player.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	combat_feedback.player.find_child("CombatName", true, false).get_parent().hide()
+	combat_feedback.player.tooltip_text = localize("Spider Debugger" if run.loadout_key == "spider" else "Bee Programmer")
 	STATUS_HUD.energy(bee_bar, b.energy)
 	var states: Array[String] = []
 	if run.loadout_key == "spider":
@@ -579,7 +608,7 @@ func battle_screen() -> void:
 	var next_energy := label(bee_bar, localize("Next turn: %d Energy") % b.next_turn_energy(), 16, HONEY)
 	next_energy.name = "NextTurnEnergy"
 	next_energy.tooltip_text = localize("Base 3 · Debt -%d · Cached +%d") % [b.debt, b.bee.bank]
-	var pending := label(content, localize("Base 3 · Debt -%d · Cached +%d") % [b.debt, b.bee.bank] + (" · " + localize(" · ".join(states)) if not states.is_empty() else ""), 14, MUTED)
+	var pending := label(player_hud, localize("Base 3 · Debt -%d · Cached +%d") % [b.debt, b.bee.bank] + (" · " + localize(" · ".join(states)) if not states.is_empty() else ""), 14, MUTED)
 	pending.name = "PendingEffects"
 	var tools := column(bee_bar, false)
 	tools.add_theme_constant_override("separation", 0)
@@ -591,17 +620,23 @@ func battle_screen() -> void:
 		pile_button.add_theme_font_override("font", mono)
 	button(tools, "Battle log", show_log).theme_type_variation = "CombatCounter"
 	button(bee_bar, "END TURN  [E]", end_turn, b.popup_open or not b.choice.is_empty(), true).theme_type_variation = "CombatEndTurn"
-	preview_label = label(content, "1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map", 14, MUTED)
+	var help_area := column(stage)
+	help_area.position = Vector2(0, 70)
+	help_area.size.x = 335
+	if run.battles_won == 0 and not guidance_dismissed:
+		var lesson_row := row(help_area, 6)
+		label(lesson_row, "Play cards with Energy. Block reduces the next hit.", 14, HONEY).name = "FirstBattleGuide"
+		button(lesson_row, "×", dismiss_guidance).tooltip_text = localize("Dismiss guidance")
+	preview_label = label(help_area, "1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map", 14, MUTED)
 	preview_label.name = "CardPreview"
-	preview_label.custom_minimum_size.y = 56
+	preview_label.custom_minimum_size.y = 170
+	preview_label.max_lines_visible = 7
+	preview_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	preview_label.theme_type_variation = "CombatHelp"
-	var preview_style := box(Color(INK, 0.94), LINE, 3, 8)
-	preview_style.content_margin_top = 2
-	preview_style.content_margin_bottom = 2
-	preview_label.add_theme_stylebox_override("normal", preview_style)
+	preview_label.add_theme_stylebox_override("normal", idle_preview_style())
 	var hand_scroll := ScrollContainer.new()
 	hand_scroll.name = "CombatHand"
-	hand_scroll.custom_minimum_size.y = 284 if compact else 326
+	hand_scroll.custom_minimum_size.y = 258 if compact else 278
 	hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	content.add_child(hand_scroll)
 	var hand_margin := MarginContainer.new()
@@ -632,8 +667,9 @@ func battle_screen() -> void:
 			top_row.move_child(shortcut_badge, 1)
 			view.tooltip_text = "[%s]  " % str((i + 1) % 10) + view.tooltip_text
 		combat_feedback.cards[int(card.id)] = view
-		view.custom_minimum_size = Vector2(222, 256 if compact else 302)
-		view.art_height = 94.0 if compact else 126.0
+		view.custom_minimum_size = Vector2(222, 222 if compact else 242)
+		view.set_hand_pose(10.0 * pow(absf(i - (b.hand.size() - 1) * 0.5) / maxf(1.0, (b.hand.size() - 1) * 0.5), 2))
+		view.art_height = 58.0 if compact else 76.0
 		view.get_node("Margin/Body/ArtFrame").custom_minimum_size.y = view.art_height
 		if b.can_play(card):
 			var preview := b.preview_card(card)
@@ -679,9 +715,16 @@ func battle_screen() -> void:
 		var choices: Array = b.hand.filter(func(card): return card.cost > 0) if b.choice.kind == "jelly" else b.choice.cards
 		for card in choices: button(dialog, card.name, run.choose.bind(int(card.id)))
 
+func idle_preview_style() -> StyleBoxEmpty:
+	var style := StyleBoxEmpty.new()
+	for edge in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]: style.set_content_margin(edge, 8)
+	return style
+
 func show_combat_help(value: String) -> void:
 	if is_instance_valid(preview_label):
 		preview_label.text = value
+		preview_label.tooltip_text = value
+		preview_label.add_theme_stylebox_override("normal", box(Color(INK, 0.9), LINE, 3, 8))
 		preview_label.add_theme_color_override("font_color", TEXT)
 
 func clear_combat_help() -> void:
@@ -689,7 +732,9 @@ func clear_combat_help() -> void:
 	var trigger := find_child("BugTrigger", true, false) as Label
 	if trigger: trigger.add_theme_color_override("font_color", HONEY)
 	show_combat_help(localize("1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map"))
-	if is_instance_valid(preview_label): preview_label.add_theme_color_override("font_color", MUTED)
+	if is_instance_valid(preview_label):
+		preview_label.add_theme_color_override("font_color", MUTED)
+		preview_label.add_theme_stylebox_override("normal", idle_preview_style())
 
 func clear_card_preview(id: int, view: Control) -> void:
 	if view.has_focus(): return

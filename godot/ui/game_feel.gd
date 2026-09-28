@@ -48,7 +48,7 @@ func snapshot(source: Control) -> Control:
 	return copy
 
 
-func card_hover(view: Control, active: bool) -> Tween:
+func card_hover(view: Control, active: bool, selected := false) -> Tween:
 	if not is_instance_valid(view): return null
 	var key := view.get_instance_id()
 	if not _hover.has(key):
@@ -59,9 +59,11 @@ func card_hover(view: Control, active: bool) -> Tween:
 	var tween := _track(create_tween().bind_node(view))
 	var duration := _duration(settings.hover_duration)
 	if active:
+		var scale_multiplier := settings.hover_scale + (0.025 if selected else 0.0)
+		var lift := settings.hover_lift + (6.0 if selected else 0.0)
 		tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-		tween.tween_property(view, "scale", rest.scale * settings.hover_scale, duration)
-		tween.parallel().tween_property(view, "position", rest.position - Vector2(0, settings.hover_lift), duration)
+		tween.tween_property(view, "scale", rest.scale * scale_multiplier, duration)
+		tween.parallel().tween_property(view, "position", rest.position - Vector2(0, lift), duration)
 	else:
 		tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 		tween.tween_property(view, "scale", rest.scale, duration)

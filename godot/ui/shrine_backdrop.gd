@@ -37,9 +37,9 @@ func _draw() -> void:
 		var origin := (size - dimensions) * 0.5 + pointer * travel
 		draw_texture_rect(PLATES[index], Rect2(origin, dimensions), false)
 	# Keep the environment visible but subordinate to cards, health and intent.
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0.015, 0.028, 0.05, 0.25))
+	draw_rect(Rect2(Vector2.ZERO, size), Color(0.015, 0.028, 0.05, 0.12))
 	# Quiet the controls/card zone without altering any existing UI layout.
 	var top := PackedVector2Array([Vector2.ZERO, Vector2(size.x, 0), Vector2(size.x, 90), Vector2(0, 90)])
 	draw_polygon(top, PackedColorArray([Color(0.025,0.045,0.06,0.8), Color(0.025,0.045,0.06,0.8), Color(0.025,0.045,0.06,0), Color(0.025,0.045,0.06,0)]))
-	var bottom := PackedVector2Array([Vector2(0,size.y*.38),Vector2(size.x,size.y*.38),size,Vector2(0,size.y)])
+	var bottom := PackedVector2Array([Vector2(0,size.y*.65),Vector2(size.x,size.y*.65),size,Vector2(0,size.y)])
 	draw_polygon(bottom, PackedColorArray([Color(0.025,0.045,0.06,0.2),Color(0.025,0.045,0.06,0.2),Color(0.025,0.045,0.06,0.94),Color(0.025,0.045,0.06,0.94)]))

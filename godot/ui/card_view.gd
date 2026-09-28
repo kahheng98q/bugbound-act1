@@ -11,7 +11,28 @@ var game_feel: Node
 var hover_area: Control
 var hover_allowed: Callable
 var _hovered := false
+var _hover_selected := false
+var _hand_pose_offset_y := 0.0
 var _pointer := Vector2(-10000, -10000)
+
+
+func set_hand_pose(offset_y: float) -> void:
+	_hand_pose_offset_y = offset_y
+	# The slot is still zero-sized while its Container assembles the hand.
+	# Apply after layout so full-rect anchors do not retain stale right offsets.
+	call_deferred("_apply_hand_pose")
+
+
+func _apply_hand_pose() -> void:
+	# The slot remains fixed for hit testing while callers fan the visible paper.
+	# Resetting first prevents an in-flight hover tween from restoring an old pose.
+	if is_instance_valid(game_feel): game_feel.reset_hover(self)
+	# Reassert the full slot width, then move both vertical edges as one pose.
+	offset_left = 0.0
+	offset_right = 0.0
+	offset_top = _hand_pose_offset_y
+	offset_bottom = _hand_pose_offset_y
+	if _hovered and is_instance_valid(game_feel): game_feel.card_hover(self, true, _hover_selected)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion or event is InputEventMouseButton:
@@ -26,11 +47,13 @@ func _process(_delta: float) -> void:
 		if ancestor.clip_contents: area = area.intersection(ancestor.get_global_rect())
 		ancestor = ancestor.get_parent()
 	var allowed: bool = is_visible_in_tree() and (not hover_allowed.is_valid() or hover_allowed.call())
-	var active: bool = allowed and (has_focus() or area.has_point(_pointer))
-	if active != _hovered:
+	var selected: bool = allowed and has_focus()
+	var active: bool = selected or (allowed and area.has_point(_pointer))
+	if active != _hovered or selected != _hover_selected:
 		_hovered = active
-		game_feel.card_hover(self, active)
-		z_index = 10 if active else 0
+		_hover_selected = selected
+		game_feel.card_hover(self, active, selected)
+		z_index = 12 if selected else (10 if active else 0)
 	_update_frame(allowed)
 
 func _update_frame(allowed := true) -> void:
@@ -83,7 +106,11 @@ func configure(card: Dictionary, localize: Callable, action: Callable, locked: b
 	var accent := CardStyle.accent_for(kind)
 	var surface_accent := accent.lerp(BugboundTheme.MUTED, 0.8) if locked else accent
 	for state in ["normal", "playable", "hover", "selected", "pressed", "disabled"]:
-		_state_styles[state] = CardStyle.frame(surface_accent, state)
+		var frame := CardStyle.frame(surface_accent, state)
+		if state == "selected":
+			frame.shadow_color = Color(surface_accent.lightened(0.25), 0.40)
+			frame.shadow_size = 10
+		_state_styles[state] = frame
 	_visual_state = ""
 	_update_frame()
 	$Margin/Body/Top/Cost/Value.text = str(int(card.get("cost", 0)))

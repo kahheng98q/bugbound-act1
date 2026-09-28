@@ -32,7 +32,7 @@ func prepare_card(id: int, data: Dictionary) -> void:
 	_flight = feel.snapshot(cards[id])
 	var target := enemy if data.get("kind", "") == "attack" else player
 	_target = target.get_global_rect().get_center() if is_instance_valid(target) else screen.size * 0.5
-	if data.get("kind", "") == "attack" and is_instance_valid(player): player.attack()
+	if data.get("kind", "") == "attack" and is_instance_valid(player) and player.has_method("attack"): player.attack()
 
 func prepare_enemy_attack() -> void:
 	if not is_instance_valid(enemy) or not is_instance_valid(player): return
@@ -45,7 +45,7 @@ func prepare_enemy_attack() -> void:
 
 func before_render(run: RunState) -> void:
 	_pending = {}
-	if is_instance_valid(player): _bee_pose = Vector2(player.idle_time, player.attack_time)
+	if is_instance_valid(player) and player.has_method("restore_pose"): _bee_pose = Vector2(player.idle_time, player.attack_time)
 	var resolved := _battle != null and run.battle == null and (_battle.enemy_hp <= 0 or _battle.hp <= 0)
 	if _presenting_result and not resolved:
 		_epoch += 1
@@ -106,7 +106,7 @@ func before_render(run: RunState) -> void:
 	cards.clear()
 
 func after_render(run: RunState) -> void:
-	if is_instance_valid(player): player.restore_pose(_bee_pose)
+	if is_instance_valid(player) and player.has_method("restore_pose"): player.restore_pose(_bee_pose)
 	_screen_name = run.screen
 	_battle = run.battle
 	if _battle != null:

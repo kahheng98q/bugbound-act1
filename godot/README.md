@@ -14,6 +14,42 @@ The UI uses illustrated terminal cards, a connected route map, health bars, a de
 bug monitor, and centered dialogs. The player-facing UI uses Chinese only; the former runtime language-switching path has been removed.
 The hand scrolls horizontally when it contains more cards than fit in the window.
 
+### Phase 5.5: first-person combat
+
+The player is now the camera: no Bee Programmer or Spider battlefield sprite is
+instantiated. Character identity, decks and rules are unchanged; the player HUD
+is the target for existing block, reward and damage feedback.
+
+The presentation is built in `ui/game_ui.gd`:
+- `FirstPersonStage/WorldActors/EnemyAnchor` holds the enlarged enemy and its
+  compact floating name, HP, Block/Strength and intent. Intent details are
+  available through hover or keyboard focus. A future boss HUD can replace this
+  local header without changing the player controls.
+- `FirstPersonStage/FirstPersonTools` is an empty, input-transparent layer for
+  future hands/tools. `DiagnosticsOverlay` holds the right-side Bug Monitor.
+- `PlayerHUD` groups HP/Block, Energy, Nectar/Web, pending effects, piles, log and
+  end turn above `CombatHand`. Character identity remains in the HP tooltip.
+- Fixed hand slots keep horizontal scrolling and input stable. Cards use a
+  shallow vertical fan (no rotation); hover lifts/scales, keyboard selection
+  lifts further. Longer Chinese rules borrow illustration space.
+- The original three Blender room plates remain separate from actors and UI;
+  the lower darkening starts later to expose more of the room.
+
+At 720p the layout prioritizes complete Chinese rules and status readability;
+cards start around the lower third, with the resource strip immediately above.
+1440×900 provides more room for the enemy. Enemy artwork slots are 220/322 px
+versus the previous 72/140 px; the smaller viewport deliberately exceeds the
+suggested enlargement range to keep the enemy the focal point.
+
+Phase 6 remains: first-person hands and tools/weapons, new enemy camera lunges,
+new camera-shake and screen-hit effects, and further hand/card animation polish.
+Existing feedback is retained; no new attack/VFX system or balance change is added.
+
+Validation: existing combat capture at both Chinese viewport sizes plus all
+headless test scripts. `test_game_feel.gd` additionally checks the first-person
+layers, HUD feedback target, player-sprite removal, fan and selected elevation.
+Screenshots and detailed validation logs are kept under the ignored `work/`.
+
 ### BUGBOUND combat visual system
 
 `ui/bugbound_theme.gd` centralizes navy surfaces, readable text, cyan shielding,
