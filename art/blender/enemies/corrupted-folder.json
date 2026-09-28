@@ -1,0 +1,23 @@
+{
+  "name": "corrupted-folder",
+  "camera_direction": [
+    0,
+    24,
+    -9.4
+  ],
+  "resolution": [
+    768,
+    768
+  ],
+  "alpha": "transparent RGBA",
+  "pose": "idle / frame 1",
+  "collections": {
+    "ACCESSORIES": 10,
+    "ANIMATION": 1,
+    "BODY": 15,
+    "CAMERAS": 1,
+    "EMISSIVE": 9,
+    "LIGHTING": 4
+  },
+  "mesh_faces": 178
+}

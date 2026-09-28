@@ -56,21 +56,14 @@ func _run() -> void:
 
 func bee_frames() -> void:
 	var bee = load("res://ui/bee_portrait.gd").new()
-	var source: Image = bee.SHEET.get_image()
+	var source: Image = bee.PORTRAIT.get_image()
 	check(source.get_pixel(0, 0).a == 0.0, "Bee artwork has native transparency")
-	var previous := PackedByteArray()
-	for index in range(16):
-		bee.restore_pose(Vector2((index + 0.1) * bee.IDLE_FRAME_SECONDS, -1.0) if index < 8 else Vector2(0.0, (index - 8 + 0.1) * bee.ATTACK_FRAME_SECONDS))
-		check(bee.frame_index == index, "Animation selects frame %d" % index)
-		var pixels := source.get_region(Rect2i(bee.atlas.region)).get_data()
-		check(pixels != previous, "Frame %d contains distinct artwork" % index)
-		previous = pixels
+	check(bee.material == null, "Bee prototype preserves its native alpha without a paper shader")
 	bee.attack()
-	bee._process(0.3)
-	bee.attack()
-	check(bee.frame_index == 8, "Rapid attacks restart from wind-up")
-	bee._process(8 * bee.ATTACK_FRAME_SECONDS + 0.1)
-	check(bee.frame_index < 8, "Attack completion resumes idle frames")
+	bee._process(bee.ATTACK_PULSE_SECONDS * 0.5)
+	check(bee.attack_time >= 0.0 and bee.scale.x > 1.0, "Attack hook gives the static bee a subtle pulse")
+	bee._process(bee.ATTACK_PULSE_SECONDS)
+	check(bee.attack_time < 0.0 and bee.scale == Vector2.ONE, "Static bee returns to its idle pose")
 	bee.free()
 
 func service_lifecycle() -> void:
@@ -176,11 +169,13 @@ func ui_integration() -> void:
 	var bee: Control = game.combat_feedback.player
 	var bee_slot: Control = bee.get_parent()
 	var bee_origin := bee.position
-	var idle_frame: int = bee.frame_index
 	var slot_origin := bee_slot.position
 	await settle(0.3)
-	check(bee.frame_index != idle_frame and bee.frame_index < 8, "Idle advances artwork frames")
-	check(bee_slot.position == slot_origin and bee.position == bee_origin, "Idle changes artwork without translating the image")
+	check(bee.scale == Vector2.ONE, "Static bee stays in its idle pose")
+	check(bee_slot.position == slot_origin and bee.position == bee_origin, "Idle does not move the fixed portrait slot")
+	var folder: TextureRect = game.combat_feedback.enemy
+	check(folder.texture.resource_path == "res://assets/characters/corrupted-folder.png", "Folder combat portrait uses the Blender prototype")
+	check(folder.material == null, "Folder prototype preserves its native alpha without a paper shader")
 	var pose := Vector2(bee.idle_time, bee.attack_time)
 	game.render()
 	check(Vector2(game.combat_feedback.player.idle_time, game.combat_feedback.player.attack_time) == pose, "UI rebuild preserves animation phase")
@@ -215,12 +210,12 @@ func ui_integration() -> void:
 	expected.play(id)
 	check(state(game.run) == state(expected), "Combat resolves immediately before visual impact")
 	await settle(0.10)
-	check(game.combat_feedback.player.frame_index >= 8, "Attack artwork plays after the UI rebuild")
+	check(game.combat_feedback.player.attack_time >= 0.0, "Static bee attack hook survives the UI rebuild")
 	await screenshot("card-flight")
 	await settle(game.game_feel.settings.anticipation_duration + game.game_feel.settings.play_duration)
 	await screenshot("enemy-damage")
 	await settle(0.7)
-	check(game.combat_feedback.player.frame_index < 8 and game.combat_feedback.player.attack_time < 0.0, "Bee returns to idle artwork after attacking")
+	check(game.combat_feedback.player.attack_time < 0.0 and game.combat_feedback.player.scale == Vector2.ONE, "Static bee returns to its idle pose after attacking")
 	check(state(game.run) == state(expected), "Finishing effects never changes gameplay or RNG")
 	var hp_before_enemy: int = game.run.battle.hp
 	game.end_turn()

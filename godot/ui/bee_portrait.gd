@@ -1,38 +1,36 @@
 extends TextureRect
-## Registered artwork frames: eight idle poses, then eight attack poses.
-const SHEET = preload("res://assets/bee-animation.png")
-const IDLE_FRAME_SECONDS := 0.20
-const ATTACK_FRAME_SECONDS := 0.10
+## Static Blender prototype; retains the combat presentation interface.
+const PORTRAIT = preload("res://assets/characters/bee-programmer.png")
+const ATTACK_PULSE_SECONDS := 0.18
 var idle_time := 0.0
 var attack_time := -1.0
-var frame_index := -1
-var atlas := AtlasTexture.new()
 
 func _init() -> void:
-	atlas.atlas = SHEET
-	atlas.filter_clip = true
-	texture = atlas
-	_update_frame()
+	texture = PORTRAIT
+	_apply_pose()
 
 func _process(delta: float) -> void:
 	idle_time += delta
 	if attack_time >= 0.0:
 		attack_time += delta
-		if attack_time >= 8 * ATTACK_FRAME_SECONDS: attack_time = -1.0
-	_update_frame()
+		if attack_time >= ATTACK_PULSE_SECONDS: attack_time = -1.0
+	_apply_pose()
 
 func attack() -> void:
 	attack_time = 0.0
-	_update_frame()
+	_apply_pose()
 
 func restore_pose(pose: Vector2) -> void:
 	idle_time = pose.x
 	attack_time = pose.y
-	_update_frame()
+	_apply_pose()
 
-func _update_frame() -> void:
-	var next := 8 + mini(7, int(attack_time / ATTACK_FRAME_SECONDS)) if attack_time >= 0.0 else int(idle_time / IDLE_FRAME_SECONDS) % 8
-	if next == frame_index: return
-	frame_index = next
-	var cell := Vector2(SHEET.get_size()) / 4.0
-	atlas.region = Rect2(Vector2(frame_index % 4, frame_index / 4) * cell, cell)
+func _apply_pose() -> void:
+	if attack_time < 0.0:
+		scale = Vector2.ONE
+		return
+	# A brief scale pulse preserves the existing attack hook while this prototype
+	# intentionally has a single idle image.
+	pivot_offset = size * 0.5
+	var phase := clampf(attack_time / ATTACK_PULSE_SECONDS, 0.0, 1.0)
+	scale = Vector2.ONE * (1.0 + sin(phase * PI) * 0.035)

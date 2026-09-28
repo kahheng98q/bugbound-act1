@@ -49,11 +49,12 @@ both Chinese viewport sizes and the complete catalog's text bounds.
 The draw/discard/exhaust buttons open read-only piles. `core/combat.gd` retains
 exhausted/removed cards for inspection without returning them to the draw pool.
 
-Art carryovers: the existing cutout card illustrations, bee/spider portraits,
-enemy portraits, and atlas icons are retained, not newly painted glitchpunk art.
+Art carryovers: existing cutout card illustrations, spider portraits, enemy
+portraits, and atlas icons remain. The Bee Programmer and Corrupted Folder use
+transparent Blender-rendered static prototypes in `assets/characters/`; their
+native alpha is preserved instead of applying the white-paper removal shader.
 Their terminal framing is updated; the older pale cutout fringes and hand-drawn
-icon outlines remain candidates for a future art pass. No replacement art was
-generated for this restyle.
+icon outlines remain candidates for a future art pass.
 
 Combat shows incoming damage after current Block (including lethal warnings),
 marks playable cards that trigger the active bug, and explains its reward/risk
@@ -102,10 +103,12 @@ without changing `core/` or delaying actions. One action displays its net HP los
 fully absorbed hits do not display a damage number. Monitor completion displays
 the completed bug while its replacement is already active in the rules.
 
-The bee uses `assets/bee-animation.png`, a transparent 4×4 sprite sheet: eight
-idle frames with wing/eye/limb changes and eight attack frames. `ui/bee_portrait.gd`
-plays idle at 5 FPS and attacks at 10 FPS, then returns to idle. The image
-slot stays fixed. Animation phase survives battle UI rebuilds without consuming RNG.
+The Bee Programmer uses the static transparent Blender prototype at
+`assets/characters/bee-programmer.png`. `ui/bee_portrait.gd` keeps the combat
+presentation interface and gives attacks a brief 3.5% scale pulse before returning
+to the single idle image. The Corrupted Folder similarly uses
+`assets/characters/corrupted-folder.png`. Both image slots stay fixed, and their
+presentation state survives battle UI rebuilds without consuming RNG.
 
 ```gdscript
 var feel := GameFeel.new()

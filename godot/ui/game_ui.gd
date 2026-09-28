@@ -418,7 +418,7 @@ func map_screen() -> void:
 	label(build, "Same seed + build + decisions = same run.", 14, MUTED)
 	if run.flags.daemonDraw or run.flags.printerDebt: tag(build, "BACKGROUND PROCESS PENDING", CORAL)
 
-func portrait(parent: Node, key: String, height := 140) -> TextureRect:
+func portrait(parent: Node, key: String, height := 140, combat := false) -> TextureRect:
 	if key == "spider":
 		var spider: TextureRect = SPIDER_PORTRAIT.new()
 		spider.custom_minimum_size = Vector2(height, height)
@@ -426,23 +426,31 @@ func portrait(parent: Node, key: String, height := 140) -> TextureRect:
 		spider.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		parent.add_child(spider)
 		return spider
-	var sheet: Texture2D = load("res://assets/bee-rewards.png" if key == "player" else "res://assets/bugbound-characters.png")
+	var is_static_blender_portrait := combat and key == "folder"
+	var sheet: Texture2D = load("res://assets/characters/corrupted-folder.png" if is_static_blender_portrait else ("res://assets/bee-rewards.png" if key == "player" else "res://assets/bugbound-characters.png"))
 	var index: int = ["player", "folder", "cursor", "trash", "frozen", "memoryHog", "antivirus"].find(key)
-	if key != "player" and Catalog.data.enemies[key].has("artSlot"):
+	if is_static_blender_portrait:
+		index = 0
+	elif key != "player" and Catalog.data.enemies[key].has("artSlot"):
 		sheet = load("res://assets/variety-icons.png")
 		index = Catalog.data.enemies[key].artSlot
-	var atlas := AtlasTexture.new()
-	atlas.atlas = sheet
-	var cell := Vector2(sheet.get_width() / 4.0, sheet.get_height() / 2.0)
-	atlas.region = Rect2(Vector2(index % 4, int(index / 4.0)) * cell, cell)
-	var view: TextureRect = BEE_PORTRAIT.new() if key == "player" else TextureRect.new()
-	if key != "player": view.texture = atlas
+	var view: TextureRect = BEE_PORTRAIT.new() if combat and key == "player" else TextureRect.new()
+	if key != "player" or not combat:
+		if is_static_blender_portrait:
+			view.texture = sheet
+		else:
+			var atlas := AtlasTexture.new()
+			atlas.atlas = sheet
+			var cell := Vector2(sheet.get_width() / 4.0, sheet.get_height() / 2.0)
+			atlas.region = Rect2(Vector2(index % 4, int(index / 4.0)) * cell, cell)
+			view.texture = atlas
 	view.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	view.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	view.custom_minimum_size = Vector2(height, height)
-	var shader_material := ShaderMaterial.new()
-	shader_material.shader = PAPER_SHADER
-	if key != "player": view.material = shader_material
+	if key != "player" and not is_static_blender_portrait:
+		var shader_material := ShaderMaterial.new()
+		shader_material.shader = PAPER_SHADER
+		view.material = shader_material
 	view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(view)
 	return view
@@ -474,11 +482,11 @@ func battle_screen() -> void:
 	player_slot.custom_minimum_size = Vector2.ONE * (72 if compact else 140)
 	player_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	player_row.add_child(player_slot)
-	combat_feedback.player = portrait(player_slot, "spider" if run.loadout_key == "spider" else "player", int(player_slot.custom_minimum_size.x))
+	combat_feedback.player = portrait(player_slot, "spider" if run.loadout_key == "spider" else "player", int(player_slot.custom_minimum_size.x), true)
 	combat_feedback.player.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	STATUS_HUD.header(player_row, localize("Spider Debugger" if run.loadout_key == "spider" else "Bee Programmer"), b.hp, run.max_hp, b.block)
 	var enemy_row := row(enemy_side)
-	combat_feedback.enemy = portrait(enemy_row, b.enemy_key, 72 if compact else 140)
+	combat_feedback.enemy = portrait(enemy_row, b.enemy_key, 72 if compact else 140, true)
 	STATUS_HUD.header(enemy_row, localize(enemy.name), b.enemy_hp, enemy.hp, b.enemy_shield, true, b.strength).tooltip_text = localize(enemy.feature)
 	if run.battles_won == 0 and not guidance_dismissed:
 		var lesson_row := row(player, 6)

@@ -1,0 +1,23 @@
+{
+  "name": "bee-programmer",
+  "camera_direction": [
+    0,
+    24,
+    -9.4
+  ],
+  "resolution": [
+    768,
+    768
+  ],
+  "alpha": "transparent RGBA",
+  "pose": "idle / frame 1",
+  "collections": {
+    "ACCESSORIES": 11,
+    "ANIMATION": 1,
+    "BODY": 17,
+    "CAMERAS": 1,
+    "EMISSIVE": 8,
+    "LIGHTING": 4
+  },
+  "mesh_faces": 1372
+}
