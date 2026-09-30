@@ -32,9 +32,23 @@ func card_for_view(view: Button) -> Dictionary:
 			return card
 	return {}
 
+func global_corners(control: Control) -> Array[Vector2]:
+	var transform := control.get_global_transform()
+	return [transform * Vector2.ZERO, transform * Vector2(control.size.x, 0), transform * control.size, transform * Vector2(0, control.size.y)]
+
+func all_corners_within_vertical(subject: Control, container: Control, tolerance := 1.0) -> bool:
+	var inverse := container.get_global_transform().affine_inverse()
+	for corner in global_corners(subject):
+		var local := inverse * corner
+		if local.y < -tolerance or local.y > container.size.y + tolerance: return false
+	return true
+
+func global_center(control: Control) -> Vector2:
+	return control.get_global_transform() * (control.size * 0.5)
+
 func hover(view: Control) -> void:
 	var event := InputEventMouseMotion.new()
-	event.position = root.get_final_transform() * view.get_global_rect().get_center()
+	event.position = root.get_final_transform() * global_center(view.get_parent() as Control)
 	event.global_position = event.position
 	Input.parse_input_event(event)
 	await settle()
@@ -50,10 +64,9 @@ func visible_hand() -> void:
 	var scroll := game.find_child("CombatHand", true, false) as ScrollContainer
 	check(scroll != null, "Combat hand uses a scroll container")
 	if scroll == null: return
-	var viewport := scroll.get_global_rect()
 	for view in card_buttons():
 		var body := view.get_node_or_null("Margin/Body") as Control
-		check(body != null and body.get_global_rect().position.y >= viewport.position.y and body.get_global_rect().end.y <= viewport.end.y, "Long-hand card remains vertically visible")
+		check(body != null and all_corners_within_vertical(body, scroll), "Long-hand card remains vertically visible")
 	check(scroll.get_h_scroll_bar().max_value > scroll.get_h_scroll_bar().page, "Long hand remains horizontally scrollable")
 
 func set_battle(locale: String, size: Vector2i) -> void:
@@ -88,10 +101,10 @@ func check_preview_interactions() -> void:
 	await move_pointer_outside(second)
 	first.release_focus()
 	await process_frame
-	check(preview.text == game.localize("1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map"), "CardPreview clears after focus exit")
+	check(preview.text == game.SHORTCUT_HELP, "CardPreview clears after focus exit")
 	game.render()
 	await settle()
-	check(preview_label().text == game.localize("1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map"), "CardPreview clears after combat state rebuild")
+	check(preview_label().text == game.SHORTCUT_HELP, "CardPreview clears after combat state rebuild")
 	var b = game.run.battle
 	b.bug = "firewall"
 	b.energy = 3

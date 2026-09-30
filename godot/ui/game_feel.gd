@@ -60,7 +60,9 @@ func card_hover(view: Control, active: bool, selected := false) -> Tween:
 	var duration := _duration(settings.hover_duration)
 	if active:
 		var scale_multiplier := settings.hover_scale + (0.025 if selected else 0.0)
-		var lift := settings.hover_lift + (6.0 if selected else 0.0)
+		# A full card needs enough clearance to read above the hand. Clamp the
+		# configured baseline so variants retain a deliberate 30--45px lift.
+		var lift := clampf(settings.hover_lift * 3.0, 34.0, 36.0) + (8.0 if selected else 0.0)
 		tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 		tween.tween_property(view, "scale", rest.scale * scale_multiplier, duration)
 		tween.parallel().tween_property(view, "position", rest.position - Vector2(0, lift), duration)

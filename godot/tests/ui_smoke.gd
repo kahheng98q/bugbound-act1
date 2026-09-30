@@ -39,11 +39,31 @@ func buttons(node: Node) -> Array:
 		result.append_array(buttons(child))
 	return result
 
+func global_corners(control: Control) -> Array[Vector2]:
+	var transform := control.get_global_transform()
+	return [transform * Vector2.ZERO, transform * Vector2(control.size.x, 0), transform * control.size, transform * Vector2(0, control.size.y)]
+
+func all_corners_within(subject: Control, container: Control, tolerance := 1.0) -> bool:
+	var inverse := container.get_global_transform().affine_inverse()
+	var bounds := Rect2(Vector2.ONE * -tolerance, container.size + Vector2.ONE * tolerance * 2.0)
+	for corner in global_corners(subject):
+		if not bounds.has_point(inverse * corner): return false
+	return true
+
+func all_corners_in_viewport(subject: Control, viewport: Rect2, tolerance := 1.0) -> bool:
+	var bounds := viewport.grow(tolerance)
+	for corner in global_corners(subject):
+		if not bounds.has_point(corner): return false
+	return true
+
+func global_center(control: Control) -> Vector2:
+	return control.get_global_transform() * (control.size * 0.5)
+
 func check_card_bounds() -> void:
 	for item in buttons(game):
 		if item.get_script() != load("res://ui/card_view.gd"): continue
 		var body = item.get_node("Margin/Body")
-		check(body.get_global_rect().end.y <= item.get_global_rect().end.y + 1, "Card text fits: " + item.get_node("Margin/Body/Name").text)
+		check(all_corners_within(body, item), "Card text fits: " + item.get_node("Margin/Body/Name").text)
 
 func check_combat_matrix_layout() -> void:
 	var viewport := Rect2(Vector2.ZERO, Vector2(root.size))
@@ -56,11 +76,11 @@ func check_combat_matrix_layout() -> void:
 			var body := item.get_node_or_null("Margin/Body") as Control
 			check(body != null, "Combat card has a body")
 			if body:
-				check(body.get_global_rect().size.x > 0 and body.get_global_rect().size.y > 0, "Combat card body is visible")
+				check(body.size.x > 0 and body.size.y > 0, "Combat card body is visible")
 				# Extra draws may scroll horizontally; vertical clipping is never intended.
-				check(body.get_global_rect().position.y >= 0 and body.get_global_rect().end.y <= viewport.end.y, "Combat card body fits viewport height")
-				check(item.get_global_rect().encloses(body.get_global_rect()), "Combat card text fits its paper")
-				if card_count <= 5: check(viewport.encloses(item.get_global_rect()), "Opening hand card fits viewport")
+				check(global_corners(body).all(func(corner): return corner.y >= viewport.position.y and corner.y <= viewport.end.y), "Combat card body fits viewport height")
+				check(all_corners_within(body, item), "Combat card text fits its paper")
+				if card_count <= 5: check(all_corners_in_viewport(item, viewport), "Opening hand card fits viewport")
 		if item.text == game.localize("END TURN  [E]"):
 			end_turn_found = true
 			check(viewport.encloses(item.get_global_rect()), "END TURN is within viewport")
@@ -122,7 +142,8 @@ func experience_flow() -> void:
 		check(game.bug_lesson.contains("Reward and risk applied"), "First trigger is acknowledged")
 		var incoming: Label = game.find_child("IncomingDamage", true, false)
 		check(incoming.text == game.localize("After Block: %d damage") % game.run.battle.incoming_damage(), "Incoming preview updates after playing Block")
-	await press_text("×")
+	var guide := game.find_child("FirstBattleGuide", true, false) as Control
+	if guide: await click_control(guide)
 	check(game.find_child("FirstBattleGuide", true, false) == null, "Guidance can be dismissed")
 	game.run.abandon()
 
@@ -134,7 +155,7 @@ func combat_states_capture() -> void:
 	await snapshot("combat-focus")
 	check(hand[0].has_focus(), "Card receives keyboard focus")
 	hand[0].release_focus()
-	var point: Vector2 = hand[1].get_global_rect().get_center()
+	var point: Vector2 = global_center(hand[1].get_parent() as Control)
 	var motion := InputEventMouseMotion.new()
 	motion.position = point
 	Input.parse_input_event(motion)
@@ -172,7 +193,7 @@ func combat_states_capture() -> void:
 	await snapshot("combat-long-cards-zh")
 
 func click_control(item: Control) -> void:
-	var point := item.get_global_rect().get_center()
+	var point := global_center(item)
 	var motion := InputEventMouseMotion.new()
 	motion.position = point
 	motion.global_position = point

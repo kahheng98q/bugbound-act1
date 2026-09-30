@@ -26,6 +26,9 @@ static func header(parent: Node, title: String, hp: int, maximum: int, block: in
 	var header_style := shell.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
 	header_style.content_margin_top = 3
 	header_style.content_margin_bottom = 3
+	header_style.bg_color = Color(V.INK, 0.72)
+	header_style.shadow_size = 0
+	header_style.set_border_width_all(1)
 	shell.add_theme_stylebox_override("panel", header_style)
 	shell.name = "EnemyCombatHeader" if enemy else "PlayerCombatHeader"
 	shell.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -35,6 +38,7 @@ static func header(parent: Node, title: String, hp: int, maximum: int, block: in
 	var identity := HBoxContainer.new()
 	body.add_child(identity)
 	var heading := text(identity, title, "CombatSectionTitle")
+	heading.add_theme_font_size_override("font_size", 18)
 	heading.name = "CombatName"
 	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	heading.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -45,7 +49,7 @@ static func header(parent: Node, title: String, hp: int, maximum: int, block: in
 	var values := HBoxContainer.new()
 	values.add_theme_constant_override("separation", 6)
 	body.add_child(values)
-	text(values, "生命", "CombatHelp", V.MUTED)
+	text(values, "生命" if enemy else "♥", "CombatHelp", V.MUTED)
 	var hp_value := text(values, "%d / %d" % [hp, maximum], "CombatValue")
 	hp_value.name = "HPValue"
 	hp_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -59,7 +63,7 @@ static func header(parent: Node, title: String, hp: int, maximum: int, block: in
 	var shield_row := HBoxContainer.new()
 	shield_row.add_theme_constant_override("separation", 4)
 	shield.add_child(shield_row)
-	text(shield_row, "◇ 格挡", "CombatHelp", V.CYAN)
+	text(shield_row, "◇", "CombatHelp", V.CYAN)
 	var block_value := text(shield_row, str(block), "CombatValue", V.CYAN if block > 0 else V.MUTED)
 	block_value.name = "BlockBadge"
 	shield.tooltip_text = "格挡吸收伤害；敌人行动后重置。"
@@ -68,11 +72,15 @@ static func header(parent: Node, title: String, hp: int, maximum: int, block: in
 	meter.value = hp
 	meter.maximum = maximum
 	meter.accent = V.DANGER if enemy else V.CYAN
+	meter.custom_minimum_size.y = 14
 	body.add_child(meter)
 	return shell
 
 static func energy(parent: Node, amount: int) -> PanelContainer:
 	var shell := frame(parent, V.ENERGY, 6)
+	var quiet := V.panel_style(Color(V.INK, 0.50), Color(V.ENERGY, 0.20), 6)
+	quiet.shadow_size = 0
+	shell.add_theme_stylebox_override("panel", quiet)
 	shell.name = "EnergyModule"
 	shell.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	shell.tooltip_text = "当前可用能量。基础每回合 3 点；额外效果可超过基础值。"
@@ -85,5 +93,5 @@ static func energy(parent: Node, amount: int) -> PanelContainer:
 	text(line, "能量", "CombatHelp", V.CYAN)
 	var current := text(line, str(amount), "CombatValue", V.ENERGY)
 	current.name = "EnergyValue"
-	text(body, "基础 3 · 可超载", "CombatHelp", V.MUTED)
+	text(line, "/ 3", "CombatHelp", V.MUTED)
 	return shell

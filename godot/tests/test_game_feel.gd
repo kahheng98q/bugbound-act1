@@ -34,6 +34,13 @@ func move_pointer(point: Vector2) -> void:
 	event.global_position = point
 	Input.parse_input_event(event)
 
+func all_corners_within(subject: Control, container: Control, tolerance := 1.0) -> bool:
+	var inverse := container.get_global_transform().affine_inverse()
+	var bounds := Rect2(Vector2.ONE * -tolerance, container.size + Vector2.ONE * tolerance * 2.0)
+	for corner in [Vector2.ZERO, Vector2(subject.size.x, 0), subject.size, Vector2(0, subject.size.y)]:
+		if not bounds.has_point(inverse * (subject.get_global_transform() * corner)): return false
+	return true
+
 func state(run: RunState) -> Array:
 	var result := [run.screen, run.hp, run.serial, run.rng.calls, run.rng.state,
 		run.battles_won, run.bugs_triggered, run.completed.duplicate(), run.rewards.duplicate(true)]
@@ -99,7 +106,7 @@ func service_lifecycle() -> void:
 	check(not is_instance_valid(ghost), "Played visual is cleaned up")
 	feel.card_hover(actor, true)
 	await settle(0.16)
-	check(actor.scale.is_equal_approx(Vector2.ONE * 1.05) and actor.position.is_equal_approx(origin - Vector2(0, 12)), "Hover reaches requested pose")
+	check(actor.scale.is_equal_approx(Vector2.ONE * 1.05) and actor.position.is_equal_approx(origin - Vector2(0, 36)), "Hover reaches requested pose")
 	feel.card_hover(actor, false)
 	feel.card_hover(actor, true)
 	feel.card_hover(actor, false)
@@ -176,10 +183,12 @@ func ui_integration() -> void:
 	check(stage.is_ancestor_of(world) and stage.is_ancestor_of(hands) and stage.is_ancestor_of(diagnostics), "Stage layers remain inside the first-person camera")
 	check(player_header.name == "PlayerCombatHeader" and not stage.is_ancestor_of(player_header), "Player feedback targets the HUD instead of a battlefield portrait")
 	check(stage.find_children("*", "BeePortrait", true, false).is_empty(), "First-person stage has no player portrait")
-	check(player_hud.get_global_rect().position.y >= stage.get_global_rect().end.y - 1.0 and not player_hud.get_global_rect().intersects(game.combat_feedback.enemy.get_global_rect()), "Player HUD sits below the stage without covering the enemy")
+	var energy_module := game.find_child("EnergyModule", true, false) as Control
+	var enemy_rect: Rect2 = game.combat_feedback.enemy.get_global_rect()
+	check(player_header != null and energy_module != null and not player_header.get_global_rect().intersects(enemy_rect) and not energy_module.get_global_rect().intersects(enemy_rect), "Player combat header and Energy module flank the lower stage without covering the enemy")
 	var folder: TextureRect = game.combat_feedback.enemy
 	check(folder.texture.resource_path == "res://assets/characters/corrupted-folder.png", "Folder combat portrait uses the Blender prototype")
-	check(folder.material == null, "Folder prototype preserves its native alpha without a paper shader")
+	check(folder.material is ShaderMaterial and (folder.material as ShaderMaterial).shader.resource_path == "res://ui/enemy_room_light.gdshader", "Folder uses the room-light shader while preserving native alpha")
 	check(world.is_ancestor_of(folder) and stage.get_global_rect().encloses(folder.get_global_rect()), "Enemy visual remains in the world layer within the stage")
 	game.render()
 	check(game.combat_feedback.player.name == "PlayerCombatHeader", "UI rebuild preserves the HUD feedback target")
@@ -202,16 +211,16 @@ func ui_integration() -> void:
 	move_pointer(slot.get_global_rect().get_center())
 	await settle(0.18)
 	check(card.scale.is_equal_approx(Vector2.ONE * 1.05), "Real pointer input hovers the card (scale %s, pointer %s, slot %s)" % [card.scale, card.get_global_mouse_position(), slot.get_global_rect()])
-	check(slot.position.y == 0 and is_equal_approx(card.position.y, rest_y - 12.0), "Hover leaves hand layout slot stationary")
+	check(slot.position.y == 0 and is_equal_approx(card.position.y, rest_y - 36.0), "Hover leaves hand layout slot stationary")
 	var scroll: Control = slot.get_parent().get_parent().get_parent()
-	check(scroll.get_global_rect().encloses(card.get_global_rect()), "Lifted card stays inside scroll clip")
+	check(all_corners_within(card, scroll), "Lifted card stays inside scroll clip")
 	await screenshot("hover-1280-en")
 	move_pointer(Vector2(4, 4))
 	await settle(0.16)
 	check(card.scale.is_equal_approx(Vector2.ONE) and is_equal_approx(card.position.y, rest_y), "Pointer exit returns card to its fanned rest pose")
 	card.grab_focus()
 	await settle(0.16)
-	check(card.scale.x > 1.05 and card.position.y < rest_y - 12.0, "Keyboard selection rises above pointer hover")
+	check(card.scale.is_equal_approx(Vector2.ONE * 1.075) and is_equal_approx(card.position.y, rest_y - 44.0), "Keyboard selection rises above pointer hover")
 	card.release_focus()
 	await settle(0.16)
 	var id: int = game.run.battle.hand[1].id

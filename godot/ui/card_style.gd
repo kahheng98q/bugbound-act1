@@ -36,8 +36,10 @@ static func frame(accent: Color, state: String) -> StyleBoxFlat:
 	box.shadow_offset = Vector2.ZERO
 	return box
 
-static func art_well(accent: Color) -> StyleBoxFlat:
-	var box := Palette.panel_style(Palette.INK.lightened(0.045), Palette.LINE.lerp(accent, 0.18), 4)
+static func art_well(_accent: Color) -> StyleBoxFlat:
+	# Art wells are deliberately neutral so card-kind color remains reserved for
+	# the frame, type label, and cost chip.
+	var box := Palette.panel_style(Palette.INK.lightened(0.045), Palette.LINE, 4)
 	box.set_border_width_all(1)
 	box.border_width_bottom = 2
 	box.shadow_size = 0

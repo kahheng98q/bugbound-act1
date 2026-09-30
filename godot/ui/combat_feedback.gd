@@ -81,6 +81,12 @@ func before_render(run: RunState) -> void:
 			_pending.actor.hide()
 		if _battle.triggers > _triggers and is_instance_valid(monitor) and monitor.size.y > 0:
 			var copy := feel.snapshot(monitor)
+			var active_frame := preload("res://ui/bugbound_theme.gd").panel_style(Color("101d29"), Color("c4fa4a"), 8)
+			active_frame.shadow_color = Color(0.40, 0.94, 0.80, 0.32)
+			active_frame.shadow_size = 8
+			copy.add_theme_stylebox_override("panel", active_frame)
+			var reward := copy.find_child("BugReward", true, false) as Label
+			if reward: reward.add_theme_color_override("font_color", Color("eaffb4"))
 			_pending.monitor = copy
 			_pending.progress = copy.get_node(monitor.get_path_to(progress))
 			_pending.progress.text = progress.get_meta("complete_text", progress.text)

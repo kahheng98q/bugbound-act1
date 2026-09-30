@@ -13,11 +13,13 @@ var hover_allowed: Callable
 var _hovered := false
 var _hover_selected := false
 var _hand_pose_offset_y := 0.0
+var _hand_pose_rotation_degrees := 0.0
 var _pointer := Vector2(-10000, -10000)
 
 
-func set_hand_pose(offset_y: float) -> void:
+func set_hand_pose(offset_y: float, angle := 0.0) -> void:
 	_hand_pose_offset_y = offset_y
+	_hand_pose_rotation_degrees = clampf(angle, -3.0, 3.0)
 	# The slot is still zero-sized while its Container assembles the hand.
 	# Apply after layout so full-rect anchors do not retain stale right offsets.
 	call_deferred("_apply_hand_pose")
@@ -32,6 +34,10 @@ func _apply_hand_pose() -> void:
 	offset_right = 0.0
 	offset_top = _hand_pose_offset_y
 	offset_bottom = _hand_pose_offset_y
+	# Fan only the paper around its lower centre; the parent slot remains the
+	# pointer and focus target.
+	pivot_offset = Vector2(size.x * 0.5, size.y)
+	self.rotation_degrees = _hand_pose_rotation_degrees
 	if _hovered and is_instance_valid(game_feel): game_feel.card_hover(self, true, _hover_selected)
 
 func _input(event: InputEvent) -> void:
