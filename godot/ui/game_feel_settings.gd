@@ -10,7 +10,7 @@ extends Resource
 @export var anticipation_scale := 1.06
 @export var play_rotation := 0.12
 @export var hover_scale := 1.05
-@export var hover_lift := 12.0
+@export var hover_lift := 36.0
 
 @export_category("Combat")
 @export var damage_duration := 0.24

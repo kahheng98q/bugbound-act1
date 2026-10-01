@@ -14,7 +14,7 @@ The UI uses illustrated terminal cards, a connected route map, health bars, a de
 bug monitor, and centered dialogs. The player-facing UI uses Chinese only; the former runtime language-switching path has been removed.
 The hand scrolls horizontally when it contains more cards than fit in the window.
 
-### Phase 5.5: first-person combat
+### Phase 5.6: first-person combat composition
 
 The player is now the camera: no Bee Programmer or Spider battlefield sprite is
 instantiated. Character identity, decks and rules are unchanged; the player HUD
@@ -30,8 +30,21 @@ The presentation is built in `ui/game_ui.gd`:
 - `PlayerHUD` groups HP/Block, Energy, Nectar/Web, pending effects, piles, log and
   end turn above `CombatHand`. Character identity remains in the HP tooltip.
 - Fixed hand slots keep horizontal scrolling and input stable. Cards use a
-  shallow vertical fan (no rotation); hover lifts/scales, keyboard selection
-  lifts further. Longer Chinese rules borrow illustration space.
+  shallow 16 px vertical fan with up to ±2.5° rotation. Hover lifts 36 px at
+  1.05 scale; keyboard selection lifts 44 px at 1.075 scale. Longer Chinese
+  rules borrow illustration space. Every artwork well uses the same neutral frame.
+- `enemy_grounding.gd` adds a soft platform footprint and contact shadows;
+  `enemy_room_light.gdshader` adds cyan-left/magenta-right lighting to the folder,
+  preserving its native alpha and independent battle element. Its feet align
+  with the room platform; the compact 252 px HP header and side intent stay clear
+  of its face. Existing enemy artwork sizes are unchanged.
+- HP/Block and Energy occupy a horizontal strip beside the platform, just above
+  the hand. Nectar/Web and next-turn details use a quiet secondary line; base
+  energy/debt/cache details remain in tooltips. Guidance is itself dismissible,
+  without a detached close button. Shortcut help uses one compact line.
+- The upper-right Bug Monitor is 270 px wide (previously 310), with a more
+  transparent idle surface. Its existing completion feedback gains a brighter
+  border and reward line. No new Phase 6 animation is added.
 - The original three Blender room plates remain separate from actors and UI;
   the lower darkening starts later to expose more of the room.
 
@@ -128,7 +141,7 @@ Read-only preview parity checks (including RNG preservation):
 `ui/game_feel.gd` is the reusable presentation service. The main scene exposes
 `game_feel_settings`; edit `ui/default_game_feel.tres` in the Inspector to tune
 hover, flight, damage, popup, flash, death, monitor, reward, and screen timings.
-Hover defaults to 1.05 scale and a 12 px lift over 0.12 seconds, easing out.
+Hover defaults to 1.05 scale and a 36 px lift over 0.12 seconds, easing out.
 Durations are in seconds; zero or negative timing values become 0.001 seconds.
 Duplicate the settings resource to give another scene its own timing profile.
 

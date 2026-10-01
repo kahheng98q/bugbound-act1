@@ -779,7 +779,11 @@ func show_combat_help(value: String) -> void:
 	if is_instance_valid(preview_label):
 		preview_label.text = value
 		preview_label.tooltip_text = value
-		preview_label.add_theme_stylebox_override("normal", box(Color(INK, 0.9), LINE, 3, 8))
+		# Keep stable help bounds without an empty opaque panel over the room.
+		preview_label.add_theme_stylebox_override("normal", idle_preview_style())
+		preview_label.add_theme_color_override("font_outline_color", INK)
+		preview_label.add_theme_constant_override("outline_size", 4)
+		preview_label.add_theme_font_size_override("font_size", 14)
 		preview_label.add_theme_color_override("font_color", TEXT)
 
 func clear_combat_help() -> void:
@@ -789,6 +793,8 @@ func clear_combat_help() -> void:
 	show_combat_help(SHORTCUT_HELP)
 	if is_instance_valid(preview_label):
 		preview_label.add_theme_color_override("font_color", MUTED)
+		preview_label.add_theme_font_size_override("font_size", 12)
+		preview_label.tooltip_text = localize("1–0 select · Enter play · E end turn · D deck · A draw · S discard · M map")
 		preview_label.add_theme_stylebox_override("normal", idle_preview_style())
 
 func clear_card_preview(id: int, view: Control) -> void:
