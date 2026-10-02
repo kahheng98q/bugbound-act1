@@ -114,6 +114,8 @@ func combat_matrix_capture(dimensions: Vector2i) -> void:
 
 
 func experience_flow() -> void:
+	# Standalone --experience-only must capture the same native viewport as full smoke.
+	root.content_scale_size = Vector2i.ZERO
 	for dimensions in [Vector2i(1280, 720), Vector2i(1440, 900)]:
 		root.size = dimensions
 		await settle()
@@ -125,8 +127,51 @@ func experience_flow() -> void:
 			check(body.get_child(1).size.y > 0 and body.get_child(2).size.y > 0, "Route title and trait have visible space")
 			check(body.get_child(3).get_global_rect().end.y <= route.get_global_rect().end.y, "Route details fit node")
 		await snapshot("map-%d-zh" % dimensions.x)
+		var route := named("Route_t0l0") as Button
+		var rng_calls: int = game.run.rng.calls
+		var map_before := JSON.stringify(game.run.map)
+		route.grab_focus()
+		await settle()
+		check(route.has_focus() and named("RouteSelectionTitle").text == game.localize(game.ROUTE_DETAILS.kind_text(game.run.map[0]) + " / " + game.ROUTE_DETAILS.title_text(game.run.map[0])), "Route keyboard focus updates analysis")
+		check(named("RouteSelectionDetails").text.contains("35"), "Route analysis preserves enemy HP")
+		check(game.content.get_global_rect().end.y <= dimensions.y - 24, "Focused route analysis fits viewport")
+		var motion := InputEventMouseMotion.new()
+		motion.position = global_center(named("Route_t0l1"))
+		Input.parse_input_event(motion)
+		await settle()
+		check(game.run.rng.calls == rng_calls and JSON.stringify(game.run.map) == map_before, "Route inspection preserves RNG and generated map")
+		await snapshot("map-focus-%d-zh" % dimensions.x)
+	# A presentation fixture covers completed/current, unchosen, secret and late-tier states.
+	game.run.completed = ["t0l0"]
+	game.run.tier = 1
+	game.run.flags.secretUnlocked = true
+	game.render()
+	await settle()
+	check(named("Route_t0l0").get_child(0).get_child(3).text.contains("当前位置"), "Last completed node marks current position")
+	check(named("Route_t0l1").disabled and named("Route_t1l0").disabled == false, "Unchosen previous node stays locked and next tier is selectable")
+	check(game.content.get_global_rect().end.y <= root.size.y - 24, "Secret lane and diagnostics fit at 900p")
+	await snapshot("map-progress-1440-zh")
+	named("RouteScroll").scroll_horizontal = 2160
+	await settle()
+	await snapshot("map-end-1440-zh")
+	root.size = Vector2i(1280, 720)
+	await settle()
+	check(named("RouteScroll").get_v_scroll_bar().visible, "Unlocked secret lane remains reachable by scrolling at 720p")
+	check(game.content.get_global_rect().end.y <= root.size.y - 24, "Secret lane and diagnostics fit at 720p")
+	named("RouteScroll").scroll_horizontal = 2160
+	named("RouteScroll").scroll_vertical = 460
+	await snapshot("map-secret-1280-zh")
+	game.run.start("BUG-404-LOL")
 	game.guidance_dismissed = false
-	game.run.enter("t0l0")
+	await settle()
+	named("Route_t0l0").grab_focus()
+	await press_key(KEY_ENTER)
+	var release := InputEventKey.new()
+	release.keycode = KEY_ENTER
+	release.pressed = false
+	Input.parse_input_event(release)
+	await settle()
+	check(game.run.screen == "battle" and game.run.current.id == "t0l0", "Enter activates the focused route")
 	game.run.battle.bug = "firewall"
 	game.render()
 	await settle()

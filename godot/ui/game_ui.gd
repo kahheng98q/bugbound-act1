@@ -70,6 +70,16 @@ func _exit_tree() -> void:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), INK)
+	if run.screen == "map":
+		# Quiet perspective floor behind the routing overlay, using combat accents.
+		var horizon := Vector2(size.x * 0.5, size.y * 0.36)
+		for x in range(-int(size.x), int(size.x) * 2, 160):
+			draw_line(horizon, Vector2(x, size.y), Color(MINT, 0.055), 1, true)
+		for y in [0.55, 0.66, 0.8, 0.98]:
+			draw_line(Vector2(0, size.y * y), Vector2(size.x, size.y * y), Color(MINT, 0.055), 1)
+		draw_line(Vector2(0, 2), Vector2(size.x * 0.72, 2), MINT, 2)
+		draw_line(Vector2(size.x * 0.78, 2), Vector2(size.x, 2), CORAL, 2)
+		return
 	for x in range(0, int(size.x), 36):
 		for y in range(0, int(size.y), 36): draw_circle(Vector2(x, y), 1, Color(0.4, 0.6, 0.6, 0.09))
 	draw_line(Vector2.ZERO, Vector2(size.x, 0), HONEY, 4)
@@ -172,6 +182,7 @@ func centered(parent: Node, width := 840) -> VBoxContainer:
 	return body
 
 func render() -> void:
+	queue_redraw()
 	preview_label = null
 	preview_card_id = -1
 	combat_feedback.before_render(run)
@@ -192,24 +203,10 @@ func render() -> void:
 	margin.add_child(scroll)
 	content = column(scroll)
 	content.add_theme_constant_override("separation", 6 if run.screen == "map" else (8 if run.screen == "menu" else 12))
-	var header := row(content, 20)
-	var brand := column(header)
-	brand.add_theme_constant_override("separation", 0)
-	label(brand, "BUGBOUND_", 22 if run.screen in ["battle", "menu"] else 27, HONEY)
-	if run.screen != "battle": tag(brand, "A BUG IN THE SYSTEM", MINT)
-	button(header, "Card Library", func(): collection(true))
-	if run.screen != "menu":
-		button(header, "Deck · %d  [D]" % run.cards.size(), func(): collection(false))
-		button(header, "Pause  /  Esc", pause_menu)
-		if run.screen == "battle":
-			for action in header.get_children():
-				if action is Button: action.theme_type_variation = "CombatAction"
-		if run.screen != "battle":
-			var bar := row(content, 24)
-			tag(bar, "ACT 1  /  DESKTOP", MINT)
-			tag(bar, "HP %d / %d" % [run.hp, run.max_hp], MINT)
-			tag(bar, "PATH %02d / 11" % mini(11, run.tier + 1), HONEY)
-			tag(bar, "SEED  " + run.rng.seed_text).tooltip_text = "RNG CALLS %d" % run.rng.calls
+	if run.screen == "map":
+		map_header()
+	else:
+		standard_header()
 	match run.screen:
 		"menu": menu_screen()
 		"map": map_screen()
@@ -230,6 +227,49 @@ func render() -> void:
 			shrine_backdrop.hide()
 			shrine_backdrop.set_process(false), CONNECT_ONE_SHOT)
 	if menu_deck_open and run.screen == "menu": starting_deck()
+
+func standard_header() -> void:
+	var header := row(content, 20)
+	var brand := column(header)
+	brand.add_theme_constant_override("separation", 0)
+	label(brand, "BUGBOUND_", 22 if run.screen in ["battle", "menu"] else 27, HONEY)
+	if run.screen != "battle": tag(brand, "A BUG IN THE SYSTEM", MINT)
+	button(header, "Card Library", func(): collection(true))
+	if run.screen != "menu":
+		button(header, "Deck · %d  [D]" % run.cards.size(), func(): collection(false))
+		button(header, "Pause  /  Esc", pause_menu)
+		if run.screen == "battle":
+			for action in header.get_children():
+				if action is Button: action.theme_type_variation = "CombatAction"
+		if run.screen != "battle":
+			var bar := row(content, 24)
+			tag(bar, "ACT 1  /  DESKTOP", MINT)
+			tag(bar, "HP %d / %d" % [run.hp, run.max_hp], MINT)
+			tag(bar, "PATH %02d / 11" % mini(11, run.tier + 1), HONEY)
+			tag(bar, "SEED  " + run.rng.seed_text).tooltip_text = "RNG CALLS %d" % run.rng.calls
+
+func map_header() -> void:
+	var hud := panel(content, Color(INK, 0.9), MINT, 8)
+	hud.name = "RouteHUD"
+	hud.add_theme_constant_override("separation", 5)
+	var top := row(hud, 16)
+	var brand := column(top)
+	brand.add_theme_constant_override("separation", 0)
+	label(brand, "BUGBOUND_", 22, HONEY)
+	tag(brand, "A BUG IN THE SYSTEM", MINT)
+	button(top, "Card Library", func(): collection(true)).theme_type_variation = "CompactAction"
+	button(top, "Deck · %d  [D]" % run.cards.size(), func(): collection(false)).theme_type_variation = "CompactAction"
+	button(top, "Pause  /  Esc", pause_menu).theme_type_variation = "CompactAction"
+	var status := row(hud, 20)
+	tag(status, "ACT 1  /  DESKTOP", MINT)
+	var health := tag(status, "HP %d / %d" % [run.hp, run.max_hp], VISUAL.HP)
+	health.tooltip_text = health.text
+	tag(status, "PATH %02d / 11" % mini(11, run.tier + 1), HONEY)
+	var seed_readout := tag(status, "SEED  " + run.rng.seed_text)
+	seed_readout.tooltip_text = seed_readout.text + "\nRNG CALLS %d" % run.rng.calls
+	seed_readout.max_lines_visible = 1
+	seed_readout.custom_minimum_size = Vector2(260, 22)
+	seed_readout.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
 func dismiss_guidance() -> void:
 	guidance_dismissed = true
@@ -356,40 +396,64 @@ func close_starting_deck() -> void:
 func map_screen() -> void:
 	var heading := row(content)
 	var copy := column(heading)
-	label(copy, "Choose a system path.", 30)
-	label(copy, "One step deeper into the Desktop. Pick an open process to continue.", 16, MUTED)
+	copy.add_theme_constant_override("separation", 2)
+	label(copy, "Choose a system path.", 24)
+	label(copy, "One step deeper into the Desktop. Pick an open process to continue.", 14, MUTED)
 	tag(heading, "%02d BATTLES WON  /  %02d BUG TRIGGERS" % [run.battles_won, run.bugs_triggered], HONEY)
-	var board_frame := panel(content, Color("14232b"), LINE, 12)
-	tag(board_frame, "FILE EXPLORER   /   C:\\Desktop\\Act_1", MINT)
+	var board_frame := panel(content, Color("0b1424"), MINT, 10)
+	board_frame.name = "RoutingField"
+	board_frame.add_theme_constant_override("separation", 4)
+	var field_header := row(board_frame)
+	tag(field_header, "路由扫描 / " + localize("FILE EXPLORER") + "   C:\\Desktop\\Act_1", MINT)
+	var legend := tag(field_header, "✓ 已完成   ◉ 当前位置   → 可进入   · 未解锁", MUTED)
+	legend.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	var scroll := ScrollContainer.new()
+	scroll.name = "RouteScroll"
 	var board_height: int = ROUTE_BOARD.BOARD_HEIGHT_WITH_SECRET if run.flags.secretUnlocked else ROUTE_BOARD.BOARD_HEIGHT
-	scroll.custom_minimum_size.y = board_height
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size.y = board_height if size.y >= 850 else ROUTE_BOARD.BOARD_HEIGHT
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO if run.flags.secretUnlocked else ScrollContainer.SCROLL_MODE_DISABLED
 	board_frame.add_child(scroll)
 	var board := Control.new()
 	board.set_script(ROUTE_BOARD)
+	board.name = "RouteBoard"
 	board.custom_minimum_size = Vector2(ROUTE_BOARD.BOARD_WIDTH, board_height)
 	board.locations = run.map.filter(func(node): return node.kind != "secret" or run.flags.secretUnlocked)
 	board.current_tier = run.tier
 	board.visited = run.completed
+	board.current_id = str(run.completed.back()) if not run.completed.is_empty() else ""
 	scroll.add_child(board)
+	var route_controls: Array[Button] = []
 	for node in board.locations:
 		var unlocked: bool = node.tier == run.tier
 		var passed: bool = node.id in run.completed
 		var tone := HONEY if unlocked else (MINT if passed else LINE)
 		var control := button(board, "", run.enter.bind(node.id), not unlocked)
+		control.name = "Route_" + node.id
+		control.set_meta("route_node", node)
+		route_controls.append(control)
 		control.position = board.point(node) - ROUTE_BOARD.NODE_OFFSET
 		control.size = ROUTE_BOARD.NODE_SIZE
 		control.tooltip_text = node.path + "\n" + localize(ROUTE_DETAILS.tooltip_text(node, unlocked, passed))
-		control.add_theme_stylebox_override("normal", box(Color("20323a"), tone))
-		control.add_theme_stylebox_override("disabled", box(SURFACE, tone))
+		var current: bool = node.id == board.current_id
+		control.add_theme_stylebox_override("normal", box(VISUAL.SURFACE_SELECTED, tone, 3, 8))
+		control.add_theme_stylebox_override("disabled", box(VISUAL.SURFACE_ELEVATED if passed else VISUAL.SURFACE_DISABLED, MINT if passed else LINE, 3, 8))
+		control.add_theme_stylebox_override("hover", box(VISUAL.SURFACE_HOVER, HONEY, 3, 8))
+		control.add_theme_stylebox_override("pressed", box(INK, TEXT, 3, 8))
+		var lock_frame := box(Color.TRANSPARENT, HONEY, 3, 0)
+		lock_frame.set_border_width_all(2)
+		lock_frame.border_width_top = 4
+		lock_frame.shadow_color = Color(HONEY, 0.25)
+		lock_frame.shadow_size = 8
+		control.add_theme_stylebox_override("focus", lock_frame)
+		if current:
+			control.add_theme_stylebox_override("disabled", box(VISUAL.SURFACE_SELECTED, HONEY, 3, 8))
 		var body := VBoxContainer.new()
 		body.position = Vector2(10, 6)
 		body.size = ROUTE_BOARD.NODE_SIZE - Vector2(20, 12)
 		body.add_theme_constant_override("separation", 2)
 		body.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		control.add_child(body)
-		var kind_color := CORAL if node.kind in ["boss", "elite"] else (MINT if node.kind in ["event", "secret"] else MUTED)
+		var kind_color := route_kind_color(node)
 		label(body, ROUTE_DETAILS.kind_text(node) + ("  ✓" if passed else ""), 12, kind_color)
 		var node_title := label(body, ROUTE_DETAILS.title_text(node), 17, TEXT if unlocked or passed else MUTED)
 		node_title.custom_minimum_size.y = 24
@@ -397,27 +461,52 @@ func map_screen() -> void:
 		node_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		var trait_label := label(body, ROUTE_DETAILS.trait_text(node), 13, MUTED)
 		trait_label.custom_minimum_size.y = 34
-		label(body, ROUTE_DETAILS.status_text(unlocked, passed), 12, tone if unlocked or passed else MUTED)
+		label(body, "◉ 当前位置" if current else ROUTE_DETAILS.status_text(unlocked, passed), 12, HONEY if current else (tone if unlocked or passed else MUTED))
 		for child in body.get_children(): child.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		VISUAL.decorate(control, kind_color)
 	for tier in range(11):
-		var number := tag(board, "PATH %02d" % (tier + 1), HONEY if tier == run.tier else MUTED)
+		var number := tag(board, ("→ " if tier == run.tier else "") + "PATH %02d" % (tier + 1), HONEY if tier == run.tier else MUTED)
 		number.position = Vector2(24 + tier * ROUTE_BOARD.TIER_WIDTH, ROUTE_BOARD.TIER_LABEL_Y_WITH_SECRET if run.flags.secretUnlocked else ROUTE_BOARD.TIER_LABEL_Y)
 		number.size.x = 150
 	scroll.set_deferred("scroll_horizontal", maxi(0, run.tier * ROUTE_BOARD.TIER_WIDTH - ROUTE_BOARD.TIER_WIDTH))
 	var info := row(content, 18)
-	var notes := panel(info, SURFACE, LINE, 12)
+	var notes := panel(info, Color("0c1728"), HONEY, 8)
+	notes.name = "RouteAnalysis"
 	notes.add_theme_constant_override("separation", 4)
-	tag(notes, "YOUR NEXT MOVE", HONEY)
-	label(notes, "Follow an open route above.", 18)
+	tag(notes, localize("YOUR NEXT MOVE") + " / 进程分析", HONEY)
+	var selection := label(notes, "Follow an open route above.", 18)
+	selection.name = "RouteSelectionTitle"
+	var analysis := label(notes, "悬停或聚焦节点，查看进程分析。选择可进入的节点继续。", 14, MUTED)
+	analysis.name = "RouteSelectionDetails"
+	analysis.custom_minimum_size.y = 38
 	var available: Array = run.map.filter(func(node): return node.tier == run.tier and node.has("enemy"))
 	var matching := available.size() > 1 and available.all(func(node): return node.enemy == available[0].enemy)
 	label(notes, "Matching encounters have the same rules; either route advances." if matching else "Elite processes hit harder. Events can repair your system or change your deck.", 14, MUTED)
-	var build := panel(info, SURFACE, LINE, 12)
+	var build := panel(info, Color("0c1728"), MINT, 8)
+	build.name = "RouteDiagnostics"
 	build.add_theme_constant_override("separation", 4)
-	tag(build, route_notice if not route_notice.is_empty() else "CURRENT BUILD", MINT)
+	tag(build, route_notice if not route_notice.is_empty() else localize("CURRENT BUILD") + " / 系统诊断", MINT)
 	label(build, localize(Catalog.LOADOUTS[run.loadout_key].name) + " · " + localize("%d commands installed" % run.cards.size()), 18)
+	tag(build, "已完成 %02d / 11  ·  当前路径 %02d" % [run.completed.size(), mini(11, run.tier + 1)], MINT)
 	label(build, "Same seed + build + decisions = same run.", 14, MUTED)
 	if run.flags.daemonDraw or run.flags.printerDebt: tag(build, "BACKGROUND PROCESS PENDING", CORAL)
+	for control in route_controls:
+		var node: Dictionary = control.get_meta("route_node")
+		var inspect := func():
+			selection.text = localize(ROUTE_DETAILS.kind_text(node) + " / " + ROUTE_DETAILS.title_text(node))
+			selection.add_theme_color_override("font_color", route_kind_color(node))
+			analysis.text = localize(ROUTE_DETAILS.trait_text(node)).replace("\n", " · ") + "\n" + ("◉ 当前位置 · 已完成" if node.id == board.current_id else localize(ROUTE_DETAILS.status_text(node.tier == run.tier, node.id in run.completed)))
+		control.mouse_entered.connect(inspect)
+		control.focus_entered.connect(inspect)
+		# Keep the last inspected readout stable while crossing routing channels.
+
+func route_kind_color(node: Dictionary) -> Color:
+	if node.get("anomaly", false): return VISUAL.DANGER
+	if node.kind in ["boss", "elite"]: return CORAL
+	if node.kind == "secret": return Color("ba93ff")
+	if node.kind == "event":
+		return Color("68dbc0") if node.get("event", "") in ["update", "printerGhost", "recursiveFolder"] else HONEY
+	return MINT
 
 func portrait(parent: Node, key: String, height := 140, combat := false) -> TextureRect:
 	if key == "spider":
