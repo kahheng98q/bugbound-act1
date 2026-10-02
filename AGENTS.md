@@ -40,3 +40,56 @@ Optimize for the total tokens needed to complete the request correctly, includin
 - The `bugbound-godot` Codex MCP server uses the existing Godot 4.5 editor and the integration in `work/tools/godot-mcp`. Setup and verification details are in `godot/README.md`.
 - Use the existing capture script for repeatable UI coverage and MCP for focused scene inspection and interactive checks. Keep screenshots and logs in `work/`.
 - MCP capture and interactive tools can temporarily inject project helpers. Run those operations sequentially and verify cleanup before reporting completion.
+
+
+## Tool selection and MCP routing
+
+Use the most structured project-aware tool available instead of driving an application through the GUI. The preferred order is:
+
+1. project-specific MCP or app connector;
+2. repository/file connector;
+3. local shell or Remote Desktop Commander for OS-level work;
+4. generic Computer Use only when no reliable structured interface exists.
+
+Before relying on a tool, verify that it is connected and healthy. Reuse an existing working integration instead of installing a duplicate. If a preferred tool is unavailable, fall back once to the next suitable option and report the blocker rather than repeatedly retrying the same path.
+
+### Godot
+
+- Prefer the documented `bugbound-godot` MCP integration for scene-tree inspection, node/property edits, focused runtime checks, screenshots, input/replay, and editor-aware debugging.
+- Keep only one Godot MCP integration active unless the user explicitly asks to replace it. The project-documented integration remains authoritative.
+- Inspect the target scene and relevant nodes before editing. For code-heavy changes, edit the source files directly when that is simpler, then use MCP to run and verify the result.
+- After gameplay, UI, animation, shader, or scene changes, run the smallest relevant scene first, inspect runtime errors, and capture a representative result when visual behavior changed.
+- Enable only the MCP tool groups needed for the current task when the server supports scoped toolsets; avoid loading every tool into context unnecessarily.
+
+### Blender
+
+- When Blender MCP is installed and connected, prefer it or Blender Python for objects, meshes, materials, modifiers, cameras, lights, animation, rendering, and export.
+- Prefer Blender MCP/Python over mouse-driven Computer Use for repeatable edits. Use GUI control only for operations the MCP cannot perform reliably.
+- Inspect the current scene before changing it. Preserve the source `.blend` before destructive or broad changes.
+- Keep object naming, scale, origin, and export settings consistent with Godot. Use GLB/glTF for normal Godot asset handoff unless the project already uses another established format.
+- For a Blender-to-Godot task, verify the exported asset in Godot after import instead of treating a successful Blender export as completion.
+
+### GitHub
+
+- Use the GitHub connector for remote repository state, commits, pull requests, history, and remote file updates. Do not assume the local checkout and GitHub are synchronized.
+- Read the current remote version before replacing an existing file, and keep documentation-only changes isolated from unrelated code changes.
+- When implementation work is complete, summarize the changed files and verification rather than pasting large diffs unless requested.
+
+### Remote Desktop Commander and local shell
+
+- Use Remote Desktop Commander or the local shell for installs, environment checks, file copy/move operations, process inspection, launch commands, and OS-specific paths.
+- Do not use Remote Desktop Commander as the primary way to click through Godot or Blender when a healthy MCP can perform the same operation more reliably.
+- Keep generated logs, screenshots, temporary exports, and diagnostic files in `work/` unless the task explicitly requires them in the project.
+
+### Computer Use
+
+- Treat generic GUI Computer Use as a fallback for unsupported editor actions, dialogs, or visual-only workflows.
+- Prefer deterministic MCP/API/shell operations whenever possible because they are easier to verify and reproduce.
+- If GUI interaction is necessary, make the smallest visual change, then verify the resulting project state through files, MCP, or runtime checks.
+
+### Cross-tool workflows
+
+- Godot UI/gameplay task: inspect with Godot MCP -> edit the smallest relevant files/nodes -> run focused scene -> inspect errors -> capture result.
+- Blender asset task: inspect with Blender MCP -> create/edit asset -> render or inspect preview -> export -> import in Godot -> verify in scene.
+- Repository task: inspect GitHub state -> make focused change -> run local/project validation -> update remote branch or PR as requested.
+- For any multi-tool task, keep one tool responsible for each layer instead of making several tools perform the same operation.
